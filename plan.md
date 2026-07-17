@@ -198,10 +198,10 @@ Deliberately **not** in the store:
 
 ### Phase 3 — History: heatmap, streaks, stats
 
-- [ ] `useHabitHistory` hook
-- [ ] `Heatmap`, `StreakBadge`, `StatsPanel`, composed in `HabitDetailScreen`
-- [ ] Component tests with seeded histories (streak broken yesterday, partial countable completion, brand-new habit)
-- [ ] Dev-only seed script to generate 90 days of fake check-ins for visual QA
+- [x] `useHabitHistory` hook
+- [x] `Heatmap`, `StreakBadge`, `StatsPanel`, composed in `HabitDetailScreen`
+- [x] Component tests with seeded histories (streak broken yesterday, partial countable completion, brand-new habit)
+- [x] Dev-only seed script to generate 90 days of fake check-ins for visual QA
 
 **Verify:** Against seeded data, heatmap cells match the seed, current/best streak numbers match hand-computed values, 30/90-day rates match. Checking in on the Today screen immediately updates an open detail screen.
 
