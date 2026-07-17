@@ -1,0 +1,27 @@
+:root {
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+  --color-accent: #10b981;
+  --color-muted: #6b7280;
+  --color-surface: #f3f4f6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #111827;
+    --color-text: #f9fafb;
+    --color-muted: #9ca3af;
+    --color-surface: #1f2937;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
