@@ -196,4 +196,75 @@ body {
   border-radius: 2rem;
   text-decoration: none;
   font-weight: 600;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.cta:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.habit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.habit-form h1 {
+  font-size: 1.25rem;
+}
+
+.habit-form label,
+.habit-form legend {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.habit-form input {
+  padding: 0.6rem;
+  border: 1px solid var(--color-surface);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  width: 100%;
+}
+
+.habit-form input[type='color'] {
+  padding: 0.15rem;
+  height: 2.6rem;
+}
+
+.habit-form input[type='radio'] {
+  width: auto;
+  margin-right: 0.4rem;
+}
+
+.habit-form fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form-row > div {
+  flex: 1;
+}
+
+.field-hint {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin: 0 0 0.5rem;
+}
+
+.habit-form .cta {
+  margin-top: 0.75rem;
 }
