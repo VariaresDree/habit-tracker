@@ -189,10 +189,10 @@ Deliberately **not** in the store:
 
 ### Phase 2 — Core loop: habits + one-tap check-in
 
-- [ ] `useAppStore` exactly as §3, with store tests (mocked repo asserting write-before-state-update order)
-- [ ] Routing + `AppShell`/`TabBar`
-- [ ] `HabitFormScreen` (create/edit), `CheckinScreen`, `HabitRow`, `CountStepper`, `EmptyState`
-- [ ] Date navigation (backfill previous days)
+- [x] `useAppStore` exactly as §3, with store tests (mocked repo asserting write-before-state-update order)
+- [x] Routing + `AppShell`/`TabBar`
+- [x] `HabitFormScreen` (create/edit), `CheckinScreen`, `HabitRow`, `CountStepper`, `EmptyState`
+- [x] Date navigation (backfill previous days)
 
 **Verify:** Create a binary and a countable habit; tap to complete; increment the counter past target; reload the page → state persists (IndexedDB); DevTools → Application → IndexedDB shows the rows. App usable as a bare tracker from this point on.
 
