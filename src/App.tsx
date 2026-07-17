@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import CheckinScreen from './components/checkin/CheckinScreen';
+import HabitDetailScreen from './components/detail/HabitDetailScreen';
 import AppShell from './components/layout/AppShell';
 import HabitFormScreen from './components/manage/HabitFormScreen';
 
@@ -14,6 +15,7 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<CheckinScreen />} />
         <Route path="/new" element={<HabitFormScreen />} />
+        <Route path="/habit/:id" element={<HabitDetailScreen />} />
         <Route path="/habit/:id/edit" element={<HabitFormScreen />} />
         <Route path="/settings" element={<SettingsPlaceholder />} />
       </Route>

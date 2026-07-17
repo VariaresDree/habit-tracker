@@ -92,6 +92,17 @@ describe('countable habits', () => {
   });
 });
 
+describe('detail link', () => {
+  test('each row links to the habit detail screen', async () => {
+    const id = await useAppStore.getState().addHabit(draft('Meditate'));
+    renderScreen();
+    expect(screen.getByRole('link', { name: /view meditate/i })).toHaveAttribute(
+      'href',
+      `/habit/${id}`,
+    );
+  });
+});
+
 describe('date navigation', () => {
   test('previous day allows backfill check-in for yesterday', async () => {
     const user = userEvent.setup();

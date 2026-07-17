@@ -32,8 +32,8 @@ export default function HabitRow({ habit }: { habit: Habit }) {
           <CountStepper habit={habit} value={value} />
         </div>
       )}
-      <Link className="habit-edit" to={`/habit/${habit.id}/edit`} aria-label={`Edit ${habit.name}`}>
-        ✎
+      <Link className="habit-edit" to={`/habit/${habit.id}`} aria-label={`View ${habit.name}`}>
+        ›
       </Link>
     </li>
   );
