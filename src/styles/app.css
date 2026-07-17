@@ -268,3 +268,56 @@ body {
 .habit-form .cta {
   margin-top: 0.75rem;
 }
+
+.heatmap {
+  display: grid;
+  grid-template-rows: repeat(7, 0.75rem);
+  grid-auto-flow: column;
+  grid-auto-columns: 0.75rem;
+  gap: 3px;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+}
+
+.heatmap-cell {
+  border-radius: 2px;
+}
+
+.heatmap-cell.pad {
+  visibility: hidden;
+}
+
+.streak-badge {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.streak,
+.stat {
+  flex: 1;
+  background: var(--color-surface);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.streak strong,
+.stat strong {
+  font-size: 1.5rem;
+}
+
+.streak span,
+.stat .stat-title,
+.stat small {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.stats-panel {
+  display: flex;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}

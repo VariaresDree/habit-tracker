@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { addDays, rangeKeys, toDateKey, todayKey } from './dates';
+import { addDays, dayOfWeek, rangeKeys, toDateKey, todayKey } from './dates';
 
 describe('toDateKey', () => {
   test('formats with zero-padded month and day', () => {
@@ -40,6 +40,20 @@ describe('addDays', () => {
 
   test('zero delta is identity', () => {
     expect(addDays('2026-07-18', 0)).toBe('2026-07-18');
+  });
+});
+
+describe('dayOfWeek', () => {
+  test('returns 0 for a Sunday', () => {
+    expect(dayOfWeek('2026-07-12')).toBe(0);
+  });
+
+  test('returns 6 for a Saturday', () => {
+    expect(dayOfWeek('2026-07-18')).toBe(6);
+  });
+
+  test('returns 3 for a Wednesday', () => {
+    expect(dayOfWeek('2026-07-15')).toBe(3);
   });
 });
 

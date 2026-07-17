@@ -23,6 +23,10 @@ export function addDays(key: DateKey, delta: number): DateKey {
   return toDateKey(d);
 }
 
+export function dayOfWeek(key: DateKey): number {
+  return fromDateKey(key).getDay(); // 0 = Sunday .. 6 = Saturday
+}
+
 export function rangeKeys(from: DateKey, to: DateKey): DateKey[] {
   const keys: DateKey[] = [];
   for (let k = from; k <= to; k = addDays(k, 1)) {
