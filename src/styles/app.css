@@ -73,3 +73,127 @@ body {
   min-height: 100dvh;
   color: var(--color-muted);
 }
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.date-nav h1 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.date-nav button {
+  border: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.date-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.habit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.habit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--color-surface);
+  border-radius: 0.75rem;
+  border-left: 4px solid var(--habit-color, var(--color-accent));
+}
+
+.habit-row .row-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.habit-row.done .habit-name {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.habit-name {
+  flex: 1;
+}
+
+.habit-check {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.habit-count {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stepper {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.stepper button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.stepper button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.habit-edit {
+  padding: 0.75rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 3rem 1rem;
+}
+
+.cta {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #fff;
+  padding: 0.6rem 1.25rem;
+  border-radius: 2rem;
+  text-decoration: none;
+  font-weight: 600;
+}
