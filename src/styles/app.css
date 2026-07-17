@@ -25,3 +25,51 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
 }
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.app-content {
+  flex: 1;
+  padding: 1rem;
+  padding-bottom: 4.5rem;
+}
+
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  border-top: 1px solid var(--color-surface);
+  background: var(--color-bg);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab-bar a {
+  flex: 1;
+  text-align: center;
+  padding: 0.9rem 0;
+  color: var(--color-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.tab-bar a.active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.splash {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  color: var(--color-muted);
+}
