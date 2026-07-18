@@ -224,6 +224,20 @@ Deliberately **not** in the store:
 
 ---
 
-## Out of Scope (YAGNI — revisit only if asked)
+### Phase 6 — Multi-device access + improvements (added after Phase 5 review)
 
-Weekly/custom schedules (all habits are daily), data export/import, cloud sync, multi-device, charts beyond the heatmap, theming beyond light/dark via CSS custom properties.
+- [x] JSON export/import: `repo.exportData()/importData()` (replace-all in one transaction) + Settings "Data" section — this is the cross-device data bridge
+- [x] Theme toggle: light / dark / system persisted in settings; explicit choice beats OS preference
+- [x] GitHub Pages deploy: base path `/habit-tracker/`, router basename, PWA scope, 404.html for SPA deep links
+- [x] CI: `.github/workflows/deploy.yml` runs tests + build on every push/PR; deploys `main` to Pages
+
+**Live URL:** https://variaresdree.github.io/habit-tracker/
+
+## Out of Scope (revisited with Phase 6)
+
+- ~~Data export/import~~ — shipped in Phase 6
+- ~~Theming beyond light/dark~~ — light/dark/system toggle shipped in Phase 6
+- ~~Multi-device~~ — app access via GitHub Pages + data via export/import; live *sync* stays out (see below)
+- Cloud sync — declined: any live sync (Dexie Cloud, Supabase) requires a hosted backend, breaking the client-only constraint
+- Weekly/custom schedules — declined for now: touches schema, streak semantics, check-in screen, and stats
+- Charts beyond the heatmap — declined: low value over the existing heatmap + stats for a single user
