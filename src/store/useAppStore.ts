@@ -5,12 +5,15 @@ import { todayKey } from '../lib/dates';
 
 // Offline-first guardrail: every action awaits its repo (Dexie) write
 // before touching in-memory state.
+export type Theme = 'system' | 'light' | 'dark';
+
 interface AppState {
   status: 'loading' | 'ready';
   habits: Habit[];
   selectedDate: string;
   checkins: Record<number, number>;
   notificationsEnabled: boolean;
+  theme: Theme;
 
   hydrate: () => Promise<void>;
   setSelectedDate: (date: string) => Promise<void>;
@@ -23,6 +26,7 @@ interface AppState {
   toggleCheckin: (habitId: number) => Promise<void>;
   setCheckinValue: (habitId: number, value: number) => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
+  setTheme: (theme: Theme) => Promise<void>;
 }
 
 function toValueMap(rows: Checkin[]): Record<number, number> {
@@ -37,17 +41,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedDate: todayKey(),
   checkins: {},
   notificationsEnabled: false,
+  theme: 'system',
 
   hydrate: async () => {
-    const [habits, rows, notificationsEnabled] = await Promise.all([
+    const [habits, rows, notificationsEnabled, theme] = await Promise.all([
       repo.getActiveHabits(),
       repo.getCheckinsForDate(get().selectedDate),
       repo.getSetting<boolean>('notificationsEnabled'),
+      repo.getSetting<Theme>('theme'),
     ]);
     set({
       habits,
       checkins: toValueMap(rows),
       notificationsEnabled: notificationsEnabled === true,
+      theme: theme ?? 'system',
       status: 'ready',
     });
   },
@@ -111,5 +118,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setNotificationsEnabled: async (enabled) => {
     await repo.putSetting('notificationsEnabled', enabled);
     set({ notificationsEnabled: enabled });
+  },
+
+  setTheme: async (theme) => {
+    await repo.putSetting('theme', theme);
+    set({ theme });
   },
 }));

@@ -19,6 +19,15 @@ export default function AppShell() {
     return startReminderScheduler();
   }, [status, notificationsEnabled]);
 
+  const theme = useAppStore((s) => s.theme);
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim();
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', bg || '#10b981');
+  }, [theme]);
+
   if (status !== 'ready') {
     return (
       <div className="splash" role="status">

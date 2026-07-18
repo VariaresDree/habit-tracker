@@ -6,8 +6,17 @@
   --color-surface: #f3f4f6;
 }
 
+/* Explicit choice (data-theme) must beat the OS preference in both
+   directions, hence the duplicated dark palette. */
+:root[data-theme='dark'] {
+  --color-bg: #111827;
+  --color-text: #f9fafb;
+  --color-muted: #9ca3af;
+  --color-surface: #1f2937;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --color-bg: #111827;
     --color-text: #f9fafb;
     --color-muted: #9ca3af;
@@ -493,4 +502,21 @@ body {
 .import-error {
   color: #dc2626;
   font-size: 0.85rem;
+}
+
+.theme-picker {
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.theme-picker legend {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.theme-picker input {
+  margin-right: 0.4rem;
 }

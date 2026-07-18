@@ -14,6 +14,8 @@ export default function SettingsScreen() {
   const unarchiveHabit = useAppStore((s) => s.unarchiveHabit);
   const deleteHabit = useAppStore((s) => s.deleteHabit);
   const hydrate = useAppStore((s) => s.hydrate);
+  const theme = useAppStore((s) => s.theme);
+  const setTheme = useAppStore((s) => s.setTheme);
 
   const [permission, setPermission] = useState<NotificationPermission>(getNotificationPermission);
   const [archived, setArchived] = useState<Habit[]>([]);
@@ -120,6 +122,24 @@ export default function SettingsScreen() {
             Reminders enabled
           </label>
         )}
+      </section>
+
+      <section>
+        <h2>Appearance</h2>
+        <fieldset className="theme-picker">
+          <legend>Theme</legend>
+          {(['system', 'light', 'dark'] as const).map((option) => (
+            <label key={option}>
+              <input
+                type="radio"
+                name="theme"
+                checked={theme === option}
+                onChange={() => void setTheme(option)}
+              />
+              {option[0].toUpperCase() + option.slice(1)}
+            </label>
+          ))}
+        </fieldset>
       </section>
 
       <section>

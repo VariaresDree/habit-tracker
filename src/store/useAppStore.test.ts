@@ -31,6 +31,7 @@ beforeEach(async () => {
     selectedDate: today,
     checkins: {},
     notificationsEnabled: false,
+    theme: 'system',
   });
 });
 
@@ -176,6 +177,26 @@ describe('notificationsEnabled', () => {
     await useAppStore.getState().setNotificationsEnabled(true);
     expect(useAppStore.getState().notificationsEnabled).toBe(true);
     expect(await repo.getSetting('notificationsEnabled')).toBe(true);
+  });
+});
+
+describe('theme', () => {
+  test('defaults to system when no setting exists', async () => {
+    await useAppStore.getState().hydrate();
+    expect(useAppStore.getState().theme).toBe('system');
+  });
+
+  test('hydrate loads the persisted theme', async () => {
+    await repo.putSetting('theme', 'dark');
+    await useAppStore.getState().hydrate();
+    expect(useAppStore.getState().theme).toBe('dark');
+  });
+
+  test('setTheme persists then updates memory', async () => {
+    await useAppStore.getState().hydrate();
+    await useAppStore.getState().setTheme('light');
+    expect(useAppStore.getState().theme).toBe('light');
+    expect(await repo.getSetting('theme')).toBe('light');
   });
 });
 

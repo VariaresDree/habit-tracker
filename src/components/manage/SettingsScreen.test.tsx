@@ -33,6 +33,7 @@ beforeEach(async () => {
     selectedDate: todayKey(),
     checkins: {},
     notificationsEnabled: false,
+    theme: 'system',
   });
   await useAppStore.getState().hydrate();
 });
@@ -74,6 +75,20 @@ describe('notifications section', () => {
     await user.click(toggle);
     await waitFor(() => expect(useAppStore.getState().notificationsEnabled).toBe(true));
     expect(await repo.getSetting('notificationsEnabled')).toBe(true);
+  });
+});
+
+describe('appearance section', () => {
+  test('theme radios reflect and update the store', async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen />);
+
+    expect(screen.getByRole('radio', { name: /system/i })).toBeChecked();
+
+    await user.click(screen.getByRole('radio', { name: /dark/i }));
+    await waitFor(() => expect(useAppStore.getState().theme).toBe('dark'));
+    expect(await repo.getSetting('theme')).toBe('dark');
+    expect(screen.getByRole('radio', { name: /dark/i })).toBeChecked();
   });
 });
 

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, test } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -32,6 +32,19 @@ test('gates on hydration, then shows the Today screen with tab navigation', asyn
   expect(screen.getByRole('link', { name: 'Today' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'New' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+});
+
+test('theme choice is stamped on the document root', async () => {
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('navigation');
+  expect(document.documentElement.dataset.theme).toBe('system');
+
+  await act(() => useAppStore.getState().setTheme('dark'));
+  expect(document.documentElement.dataset.theme).toBe('dark');
 });
 
 test('tab links navigate between screens', async () => {
