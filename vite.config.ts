@@ -5,6 +5,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // GitHub Pages project site serves from /habit-tracker/.
+  base: '/habit-tracker/',
   plugins: [
     react(),
     VitePWA({
@@ -17,7 +19,8 @@ export default defineConfig({
         theme_color: '#10b981',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/habit-tracker/',
+        scope: '/habit-tracker/',
         icons: [
           { src: 'icons/pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icons/pwa-512.png', sizes: '512x512', type: 'image/png' },
@@ -27,7 +30,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png}'],
         // SPA: deep links like /habit/1 must resolve offline too.
-        navigateFallback: '/index.html',
+        navigateFallback: '/habit-tracker/index.html',
       },
     }),
   ],

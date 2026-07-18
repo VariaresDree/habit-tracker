@@ -51,7 +51,11 @@ export async function showReminder(habit: Habit): Promise<void> {
     habit.type === 'count'
       ? `Goal today: ${habit.target} ${habit.unit ?? ''}`.trim()
       : 'Time for your habit.';
-  const options = { body, icon: '/icons/pwa-192.png', tag: `habit-${habit.id}` };
+  const options = {
+    body,
+    icon: `${import.meta.env.BASE_URL}icons/pwa-192.png`,
+    tag: `habit-${habit.id}`,
+  };
   // Via the SW registration when available (survives tab focus loss in an
   // installed PWA); plain Notification otherwise (vite dev has no SW).
   const reg = await navigator.serviceWorker?.getRegistration?.();
