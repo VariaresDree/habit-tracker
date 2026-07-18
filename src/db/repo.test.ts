@@ -4,8 +4,10 @@ import {
   archiveHabit,
   createHabit,
   deleteHabitAndCheckins,
+  exportData,
   getActiveHabits,
   getArchivedHabits,
+  importData,
   getCheckinsForDate,
   getCheckinsForHabit,
   getHabit,
@@ -104,6 +106,58 @@ describe('checkins', () => {
 
     const rows = await getCheckinsForHabit(id, '2026-07-16');
     expect(rows.map((r) => r.date)).toEqual(['2026-07-17', '2026-07-18']);
+  });
+});
+
+describe('export and import', () => {
+  test('export -> wipe -> import restores identical rows including ids and compound keys', async () => {
+    const idA = await createHabit(draft('Drink water'));
+    const idB = await createHabit(draft('Read'));
+    await putCheckin({ habitId: idA, date: '2026-07-17', value: 1 });
+    await putCheckin({ habitId: idB, date: '2026-07-18', value: 3 });
+    await putSetting('notificationsEnabled', true);
+
+    const backup = await exportData();
+    expect(backup.version).toBe(1);
+    expect(backup.exportedAt).toBeTruthy();
+
+    await db.delete();
+    await db.open();
+    expect(await getActiveHabits()).toEqual([]);
+
+    await importData(backup);
+
+    expect((await getActiveHabits()).map((h) => h.id)).toEqual([idA, idB]);
+    expect(await getCheckinsForHabit(idA, '2000-01-01')).toHaveLength(1);
+    expect(await getCheckinsForHabit(idB, '2000-01-01')).toHaveLength(1);
+    expect(await getSetting('notificationsEnabled')).toBe(true);
+  });
+
+  test('import replaces all existing data', async () => {
+    const oldId = await createHabit(draft('Old habit'));
+    const backup = await exportData();
+
+    await db.delete();
+    await db.open();
+    const newId = await createHabit(draft('New habit'));
+    await putCheckin({ habitId: newId, date: '2026-07-18', value: 1 });
+
+    await importData(backup);
+
+    const habits = await getActiveHabits();
+    expect(habits.map((h) => h.name)).toEqual(['Old habit']);
+    expect(await getCheckinsForHabit(newId, '2000-01-01')).toEqual([]);
+    expect(await getHabit(oldId)).toBeDefined();
+  });
+
+  test('invalid payload rejects without touching existing data', async () => {
+    const id = await createHabit(draft('Keep me'));
+
+    await expect(importData({ version: 2, habits: [] })).rejects.toThrow(/valid/i);
+    await expect(importData('garbage')).rejects.toThrow(/valid/i);
+    await expect(importData(null)).rejects.toThrow(/valid/i);
+
+    expect((await getActiveHabits()).map((h) => h.id)).toEqual([id]);
   });
 });
 

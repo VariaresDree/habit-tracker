@@ -1,4 +1,45 @@
-import { db, type Checkin, type Habit, type NewHabitDraft } from './db';
+import { db, type Checkin, type Habit, type NewHabitDraft, type Setting } from './db';
+
+export interface BackupV1 {
+  version: 1;
+  exportedAt: string;
+  habits: Habit[];
+  checkins: Checkin[];
+  settings: Setting[];
+}
+
+export async function exportData(): Promise<BackupV1> {
+  const [habits, checkins, settings] = await Promise.all([
+    db.habits.toArray(),
+    db.checkins.toArray(),
+    db.settings.toArray(),
+  ]);
+  return { version: 1, exportedAt: new Date().toISOString(), habits, checkins, settings };
+}
+
+export function importData(payload: unknown): Promise<void> {
+  const p = payload as Partial<BackupV1> | null;
+  if (
+    !p ||
+    typeof p !== 'object' ||
+    p.version !== 1 ||
+    !Array.isArray(p.habits) ||
+    !Array.isArray(p.checkins) ||
+    !Array.isArray(p.settings)
+  ) {
+    return Promise.reject(new Error('Not a valid habit-tracker backup file.'));
+  }
+  // Replace-all semantics in one transaction: either the whole backup lands
+  // or nothing changes.
+  return db.transaction('rw', db.habits, db.checkins, db.settings, async () => {
+    await Promise.all([db.habits.clear(), db.checkins.clear(), db.settings.clear()]);
+    await Promise.all([
+      db.habits.bulkAdd(p.habits as Habit[]),
+      db.checkins.bulkAdd(p.checkins as Checkin[]),
+      db.settings.bulkAdd(p.settings as Setting[]),
+    ]);
+  });
+}
 
 export function getActiveHabits(): Promise<Habit[]> {
   // IndexedDB can't index null values, so the active filter runs in JS.
