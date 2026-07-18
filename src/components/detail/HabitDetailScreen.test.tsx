@@ -49,7 +49,9 @@ describe('HabitDetailScreen', () => {
     expect(screen.getByRole('heading', { name: /meditate/i })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText(/current streak/i)).toHaveTextContent('2'));
     expect(screen.getByLabelText(/best streak/i)).toHaveTextContent('2');
-    expect(screen.getByLabelText('Last 30 days')).toHaveTextContent('2 / 30 days');
+    // Habit was created moments ago with history back to T-2: the stats
+    // denominator covers the 3 days the habit has existed, not a fixed 30.
+    expect(screen.getByLabelText('Last 30 days')).toHaveTextContent('2 / 3 days');
 
     const heatmap = screen.getByRole('img', { name: /weeks of check-ins/i });
     expect(heatmap.querySelector(`[data-date="${addDays(today, -1)}"]`)).toHaveAttribute(

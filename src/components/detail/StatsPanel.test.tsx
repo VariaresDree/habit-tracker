@@ -15,10 +15,17 @@ const habit = (overrides: Partial<Habit> = {}): Habit => ({
   target: 1,
   reminderTime: null,
   sortOrder: 1,
-  createdAt: new Date().toISOString(),
+  // Old enough that the 30/90-day windows are never clamped by habit age.
+  createdAt: '2026-01-01T00:00:00.000Z',
   archivedAt: null,
   ...overrides,
 });
+
+function isoDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
 
 describe('StatsPanel', () => {
   test('shows hand-computed 30 and 90 day completion rates', () => {
@@ -57,5 +64,26 @@ describe('StatsPanel', () => {
     render(<StatsPanel history={[]} habit={habit()} />);
     expect(screen.getByLabelText('Last 30 days')).toHaveTextContent('0%');
     expect(screen.getByLabelText('Last 90 days')).toHaveTextContent('0%');
+  });
+
+  test('young habit: denominator starts at creation, not the full window', () => {
+    // Created 4 days ago (5 days of existence incl. today), 3 completions.
+    const history = [1, 2, 3].map((i) => ({ date: addDays(today, -i), value: 1 }));
+    render(<StatsPanel history={history} habit={habit({ createdAt: isoDaysAgo(4) })} />);
+
+    const last30 = screen.getByLabelText('Last 30 days');
+    expect(last30).toHaveTextContent('60%');
+    expect(last30).toHaveTextContent('3 / 5 days');
+    expect(screen.getByLabelText('Last 90 days')).toHaveTextContent('3 / 5 days');
+  });
+
+  test('check-ins older than createdAt extend the denominator back to them', () => {
+    // Habit row created today (e.g. via import) but history reaches back 9 days.
+    const history = [{ date: addDays(today, -9), value: 1 }];
+    render(<StatsPanel history={history} habit={habit({ createdAt: isoDaysAgo(0) })} />);
+
+    const last30 = screen.getByLabelText('Last 30 days');
+    expect(last30).toHaveTextContent('1 / 10 days');
+    expect(last30).toHaveTextContent('10%');
   });
 });
