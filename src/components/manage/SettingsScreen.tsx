@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Habit } from '../../db/db';
 import * as repo from '../../db/repo';
+import { todayKey } from '../../lib/dates';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -12,9 +13,11 @@ export default function SettingsScreen() {
   const setNotificationsEnabled = useAppStore((s) => s.setNotificationsEnabled);
   const unarchiveHabit = useAppStore((s) => s.unarchiveHabit);
   const deleteHabit = useAppStore((s) => s.deleteHabit);
+  const hydrate = useAppStore((s) => s.hydrate);
 
   const [permission, setPermission] = useState<NotificationPermission>(getNotificationPermission);
   const [archived, setArchived] = useState<Habit[]>([]);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const refreshArchived = useCallback(async () => {
     setArchived(await repo.getArchivedHabits());
@@ -41,6 +44,48 @@ export default function SettingsScreen() {
     if (window.confirm(`Delete "${habit.name}" and all its history?`)) {
       await deleteHabit(habit.id);
       await refreshArchived();
+    }
+  };
+
+  const exportBackup = async () => {
+    const backup = await repo.exportData();
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `habit-tracker-backup-${todayKey()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // FileReader instead of File.text(): identical support in browsers, and
+  // jsdom (tests) only implements the former.
+  const readFileText = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsText(file);
+    });
+
+  const importBackup = async (file: File) => {
+    setImportError(null);
+    let payload: unknown;
+    try {
+      payload = JSON.parse(await readFileText(file));
+    } catch {
+      setImportError('Not a valid habit-tracker backup file.');
+      return;
+    }
+    if (!window.confirm('Importing replaces ALL current habits and history. Continue?')) {
+      return;
+    }
+    try {
+      await repo.importData(payload);
+      await hydrate();
+      await refreshArchived();
+    } catch (e) {
+      setImportError(e instanceof Error ? e.message : 'Import failed.');
     }
   };
 
@@ -74,6 +119,37 @@ export default function SettingsScreen() {
             />
             Reminders enabled
           </label>
+        )}
+      </section>
+
+      <section>
+        <h2>Data</h2>
+        <p className="field-hint">
+          Export a backup file, or import one to move your data between devices. Importing
+          replaces everything on this device.
+        </p>
+        <div className="data-actions">
+          <button className="cta" onClick={() => void exportBackup()}>
+            Export data
+          </button>
+          <label className="import-label" htmlFor="import-file">
+            Import data
+          </label>
+          <input
+            id="import-file"
+            type="file"
+            accept="application/json,.json"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void importBackup(file);
+              e.target.value = '';
+            }}
+          />
+        </div>
+        {importError && (
+          <p className="import-error" role="alert">
+            {importError}
+          </p>
         )}
       </section>
 

@@ -465,3 +465,32 @@ body {
   font-size: 0.85rem;
   cursor: pointer;
 }
+
+.data-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.data-actions input[type='file'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.import-label {
+  display: inline-block;
+  padding: 0.6rem 1.25rem;
+  border-radius: 2rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.import-error {
+  color: #dc2626;
+  font-size: 0.85rem;
+}

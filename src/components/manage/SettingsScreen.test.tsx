@@ -77,6 +77,84 @@ describe('notifications section', () => {
   });
 });
 
+describe('data section', () => {
+  test('export builds a downloadable backup blob named with today\'s date', async () => {
+    const user = userEvent.setup();
+    await useAppStore.getState().addHabit(draft('Meditate'));
+    let capturedBlob: Blob | null = null;
+    const createUrl = vi.fn((blob: Blob) => {
+      capturedBlob = blob;
+      return 'blob:mock';
+    });
+    vi.stubGlobal('URL', { ...URL, createObjectURL: createUrl, revokeObjectURL: vi.fn() });
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    render(<SettingsScreen />);
+
+    await user.click(screen.getByRole('button', { name: /export data/i }));
+
+    await waitFor(() => expect(createUrl).toHaveBeenCalledOnce());
+    const blobText = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsText(capturedBlob!);
+    });
+    const backup = JSON.parse(blobText);
+    expect(backup.version).toBe(1);
+    expect(backup.habits.map((h: { name: string }) => h.name)).toEqual(['Meditate']);
+    clickSpy.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
+  test('import replaces data after confirmation and refreshes the store', async () => {
+    const user = userEvent.setup();
+    await useAppStore.getState().addHabit(draft('Old habit'));
+    const backup = await repo.exportData();
+    await db.delete();
+    await db.open();
+    useAppStore.setState({ habits: [], checkins: {} });
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<SettingsScreen />);
+
+    const file = new File([JSON.stringify(backup)], 'backup.json', { type: 'application/json' });
+    await user.upload(screen.getByLabelText(/import data/i), file);
+
+    await waitFor(() =>
+      expect(useAppStore.getState().habits.map((h) => h.name)).toEqual(['Old habit']),
+    );
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    confirmSpy.mockRestore();
+  });
+
+  test('malformed file shows an error and leaves data intact', async () => {
+    const user = userEvent.setup();
+    const id = await useAppStore.getState().addHabit(draft('Keep me'));
+    await useAppStore.getState().hydrate();
+    render(<SettingsScreen />);
+
+    const file = new File(['not json {{{'], 'bad.json', { type: 'application/json' });
+    await user.upload(screen.getByLabelText(/import data/i), file);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/not a valid/i);
+    expect(useAppStore.getState().habits.map((h) => h.id)).toEqual([id]);
+    expect((await repo.getActiveHabits()).map((h) => h.id)).toEqual([id]);
+  });
+
+  test('declining the confirmation leaves data untouched', async () => {
+    const user = userEvent.setup();
+    const id = await useAppStore.getState().addHabit(draft('Keep me'));
+    const backup = { version: 1, exportedAt: 'x', habits: [], checkins: [], settings: [] };
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<SettingsScreen />);
+
+    const file = new File([JSON.stringify(backup)], 'backup.json', { type: 'application/json' });
+    await user.upload(screen.getByLabelText(/import data/i), file);
+
+    await waitFor(() => expect(confirmSpy).toHaveBeenCalledOnce());
+    expect((await repo.getActiveHabits()).map((h) => h.id)).toEqual([id]);
+    confirmSpy.mockRestore();
+  });
+});
+
 describe('archived habits section', () => {
   test('shows a friendly empty state when nothing is archived', async () => {
     render(<SettingsScreen />);
