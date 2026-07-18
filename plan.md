@@ -207,9 +207,9 @@ Deliberately **not** in the store:
 
 ### Phase 4 — PWA: installable + offline
 
-- [ ] `vite-plugin-pwa`: manifest (name, theme color, icons in `public/icons/`), `registerType: 'autoUpdate'`, precache the app shell
-- [ ] SW registration in `main.tsx` with an unobtrusive "update available — reload" toast
-- [ ] Install experience checked on desktop + Android Chrome
+- [x] `vite-plugin-pwa`: manifest (name, theme color, icons in `public/icons/`), `registerType: 'prompt'` (autoUpdate can't fire the update toast; prompt delivers the promised UX), precache the app shell
+- [x] SW registration with an unobtrusive "update available — reload" toast (`ReloadPrompt`)
+- [ ] Install experience checked on desktop + Android Chrome — *needs a human: real install UI can't be driven from this environment*
 
 **Verify:** `npm run build && npm run preview`; Lighthouse PWA checks pass (installable, has manifest+SW); load once, go offline in DevTools, reload → app fully works and check-ins still write. Install to desktop/home screen and repeat.
 
