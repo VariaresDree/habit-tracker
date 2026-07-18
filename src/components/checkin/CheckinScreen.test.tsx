@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
@@ -100,6 +100,32 @@ describe('detail link', () => {
       'href',
       `/habit/${id}`,
     );
+  });
+});
+
+describe('reordering', () => {
+  test('reorder mode moves a habit up and persists the new order', async () => {
+    const user = userEvent.setup();
+    const idA = await useAppStore.getState().addHabit(draft('First'));
+    const idB = await useAppStore.getState().addHabit(draft('Second'));
+    renderScreen();
+
+    await user.click(screen.getByRole('button', { name: /reorder habits/i }));
+    await user.click(screen.getByRole('button', { name: /move second up/i }));
+
+    await waitFor(() =>
+      expect(useAppStore.getState().habits.map((h) => h.id)).toEqual([idB, idA]),
+    );
+    expect((await repo.getActiveHabits()).map((h) => h.id)).toEqual([idB, idA]);
+
+    await user.click(screen.getByRole('button', { name: /done reordering/i }));
+    expect(screen.queryByRole('button', { name: /move/i })).not.toBeInTheDocument();
+  });
+
+  test('reorder toggle is hidden with fewer than two habits', async () => {
+    await useAppStore.getState().addHabit(draft('Only'));
+    renderScreen();
+    expect(screen.queryByRole('button', { name: /reorder habits/i })).not.toBeInTheDocument();
   });
 });
 

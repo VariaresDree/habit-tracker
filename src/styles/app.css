@@ -436,3 +436,32 @@ body {
 .archived-list button.danger {
   color: #dc2626;
 }
+
+.reorder-row {
+  padding: 0.9rem;
+}
+
+.reorder-row button {
+  border: none;
+  background: var(--color-bg);
+  color: var(--color-text);
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.reorder-row button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.reorder-toggle {
+  margin-top: 0.75rem;
+  border: none;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
