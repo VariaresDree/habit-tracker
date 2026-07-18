@@ -74,12 +74,17 @@ export function startReminderScheduler(
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
+  // Overlapping arm() calls race across the IndexedDB await below: each one
+  // clears the timer before awaiting, so two could both set timers and
+  // double-fire. Only the newest generation is allowed to arm.
+  let generation = 0;
 
   const arm = async () => {
+    const gen = ++generation;
     clearTimeout(timer);
     const { habits } = useAppStore.getState();
     const rows = await repo.getCheckinsForDate(todayKey());
-    if (stopped) return;
+    if (stopped || gen !== generation) return;
     const todayCheckins: Record<number, number> = {};
     for (const row of rows) todayCheckins[row.habitId] = row.value;
     const next = nextReminder(habits, todayCheckins, new Date());

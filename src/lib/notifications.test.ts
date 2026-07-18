@@ -111,6 +111,30 @@ describe('startReminderScheduler', () => {
     stop();
   });
 
+  test('a burst of store updates re-arms without double-firing', async () => {
+    await useAppStore.getState().addHabit({
+      name: 'Meditate',
+      emoji: '🧘',
+      color: '#3b82f6',
+      type: 'binary',
+      target: 1,
+      reminderTime: '09:02',
+    });
+    const show = vi.fn();
+    const stop = startReminderScheduler(show);
+
+    // Each setState notifies the scheduler's subscription synchronously,
+    // so several arm() calls overlap while awaiting IndexedDB.
+    useAppStore.setState({ selectedDate: todayKey() });
+    useAppStore.setState({ selectedDate: todayKey() });
+    useAppStore.setState({ selectedDate: todayKey() });
+
+    await vi.advanceTimersByTimeAsync(3 * 60 * 1000);
+
+    expect(show).toHaveBeenCalledTimes(1);
+    stop();
+  });
+
   test('stop() cancels the pending timer', async () => {
     await useAppStore.getState().addHabit({
       name: 'Meditate',
