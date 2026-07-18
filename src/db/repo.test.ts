@@ -5,6 +5,7 @@ import {
   createHabit,
   deleteHabitAndCheckins,
   getActiveHabits,
+  getArchivedHabits,
   getCheckinsForDate,
   getCheckinsForHabit,
   getHabit,
@@ -46,6 +47,15 @@ describe('habits', () => {
     expect(await getActiveHabits()).toEqual([]);
     const habit = await getHabit(id);
     expect(habit?.archivedAt).toBeTruthy();
+  });
+
+  test('getArchivedHabits returns only archived habits', async () => {
+    const idA = await createHabit(draft('Drink water'));
+    await createHabit(draft('Read'));
+    await archiveHabit(idA);
+
+    const archived = await getArchivedHabits();
+    expect(archived.map((h) => h.id)).toEqual([idA]);
   });
 
   test('deleteHabitAndCheckins removes the habit and only its check-ins', async () => {

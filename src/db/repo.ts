@@ -8,6 +8,13 @@ export function getActiveHabits(): Promise<Habit[]> {
     .toArray();
 }
 
+export function getArchivedHabits(): Promise<Habit[]> {
+  return db.habits
+    .orderBy('sortOrder')
+    .filter((h) => h.archivedAt !== null)
+    .toArray();
+}
+
 export function getHabit(id: number): Promise<Habit | undefined> {
   return db.habits.get(id);
 }

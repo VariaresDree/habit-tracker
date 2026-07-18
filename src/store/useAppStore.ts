@@ -10,16 +10,19 @@ interface AppState {
   habits: Habit[];
   selectedDate: string;
   checkins: Record<number, number>;
+  notificationsEnabled: boolean;
 
   hydrate: () => Promise<void>;
   setSelectedDate: (date: string) => Promise<void>;
   addHabit: (draft: NewHabitDraft) => Promise<number>;
   updateHabit: (id: number, patch: Partial<Habit>) => Promise<void>;
   archiveHabit: (id: number) => Promise<void>;
+  unarchiveHabit: (id: number) => Promise<void>;
   deleteHabit: (id: number) => Promise<void>;
   reorderHabits: (idsInOrder: number[]) => Promise<void>;
   toggleCheckin: (habitId: number) => Promise<void>;
   setCheckinValue: (habitId: number, value: number) => Promise<void>;
+  setNotificationsEnabled: (enabled: boolean) => Promise<void>;
 }
 
 function toValueMap(rows: Checkin[]): Record<number, number> {
@@ -33,13 +36,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   habits: [],
   selectedDate: todayKey(),
   checkins: {},
+  notificationsEnabled: false,
 
   hydrate: async () => {
-    const [habits, rows] = await Promise.all([
+    const [habits, rows, notificationsEnabled] = await Promise.all([
       repo.getActiveHabits(),
       repo.getCheckinsForDate(get().selectedDate),
+      repo.getSetting<boolean>('notificationsEnabled'),
     ]);
-    set({ habits, checkins: toValueMap(rows), status: 'ready' });
+    set({
+      habits,
+      checkins: toValueMap(rows),
+      notificationsEnabled: notificationsEnabled === true,
+      status: 'ready',
+    });
   },
 
   setSelectedDate: async (date) => {
@@ -62,6 +72,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   archiveHabit: async (id) => {
     await repo.archiveHabit(id);
     set({ habits: get().habits.filter((h) => h.id !== id) });
+  },
+
+  unarchiveHabit: async (id) => {
+    await repo.updateHabit(id, { archivedAt: null });
+    const habits = await repo.getActiveHabits();
+    set({ habits });
   },
 
   deleteHabit: async (id) => {
@@ -90,5 +106,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     const clamped = Math.max(0, value);
     await repo.putCheckin({ habitId, date: get().selectedDate, value: clamped });
     set({ checkins: { ...get().checkins, [habitId]: clamped } });
+  },
+
+  setNotificationsEnabled: async (enabled) => {
+    await repo.putSetting('notificationsEnabled', enabled);
+    set({ notificationsEnabled: enabled });
   },
 }));

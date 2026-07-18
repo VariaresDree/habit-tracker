@@ -30,6 +30,7 @@ beforeEach(async () => {
     habits: [],
     selectedDate: today,
     checkins: {},
+    notificationsEnabled: false,
   });
 });
 
@@ -141,6 +142,40 @@ describe('archive and delete', () => {
     expect(useAppStore.getState().checkins[id]).toBeUndefined();
     expect(await repo.getHabit(id)).toBeUndefined();
     expect(await repo.getCheckinsForHabit(id, '2000-01-01')).toEqual([]);
+  });
+});
+
+describe('unarchiveHabit', () => {
+  test('returns an archived habit to the active list, persisted', async () => {
+    await useAppStore.getState().hydrate();
+    const id = await useAppStore.getState().addHabit(draft('Meditate'));
+    await useAppStore.getState().archiveHabit(id);
+    expect(useAppStore.getState().habits).toEqual([]);
+
+    await useAppStore.getState().unarchiveHabit(id);
+
+    expect(useAppStore.getState().habits.map((h) => h.id)).toEqual([id]);
+    expect((await repo.getHabit(id))?.archivedAt).toBeNull();
+  });
+});
+
+describe('notificationsEnabled', () => {
+  test('hydrate loads the persisted flag', async () => {
+    await repo.putSetting('notificationsEnabled', true);
+    await useAppStore.getState().hydrate();
+    expect(useAppStore.getState().notificationsEnabled).toBe(true);
+  });
+
+  test('defaults to false when no setting exists', async () => {
+    await useAppStore.getState().hydrate();
+    expect(useAppStore.getState().notificationsEnabled).toBe(false);
+  });
+
+  test('setNotificationsEnabled persists then updates memory', async () => {
+    await useAppStore.getState().hydrate();
+    await useAppStore.getState().setNotificationsEnabled(true);
+    expect(useAppStore.getState().notificationsEnabled).toBe(true);
+    expect(await repo.getSetting('notificationsEnabled')).toBe(true);
   });
 });
 
