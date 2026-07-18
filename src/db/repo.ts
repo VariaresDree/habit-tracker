@@ -17,6 +17,46 @@ export async function exportData(): Promise<BackupV1> {
   return { version: 1, exportedAt: new Date().toISOString(), habits, checkins, settings };
 }
 
+// Row validators: a malformed row (e.g. a habit without sortOrder) would
+// import cleanly and then silently vanish from indexed queries. Unknown
+// extra fields are allowed so newer backups stay readable.
+function isHabitRow(row: unknown): boolean {
+  const h = row as Record<string, unknown> | null;
+  return (
+    !!h &&
+    typeof h === 'object' &&
+    typeof h.id === 'number' &&
+    typeof h.name === 'string' &&
+    typeof h.emoji === 'string' &&
+    typeof h.color === 'string' &&
+    (h.type === 'binary' || h.type === 'count') &&
+    typeof h.target === 'number' &&
+    (h.unit === undefined || typeof h.unit === 'string') &&
+    (h.reminderTime === null || typeof h.reminderTime === 'string') &&
+    typeof h.sortOrder === 'number' &&
+    typeof h.createdAt === 'string' &&
+    (h.archivedAt === null || typeof h.archivedAt === 'string')
+  );
+}
+
+function isCheckinRow(row: unknown): boolean {
+  const c = row as Record<string, unknown> | null;
+  return (
+    !!c &&
+    typeof c === 'object' &&
+    typeof c.habitId === 'number' &&
+    typeof c.date === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(c.date) &&
+    typeof c.value === 'number' &&
+    typeof c.updatedAt === 'string'
+  );
+}
+
+function isSettingRow(row: unknown): boolean {
+  const s = row as Record<string, unknown> | null;
+  return !!s && typeof s === 'object' && typeof s.key === 'string';
+}
+
 export function importData(payload: unknown): Promise<void> {
   const p = payload as Partial<BackupV1> | null;
   if (
@@ -25,7 +65,10 @@ export function importData(payload: unknown): Promise<void> {
     p.version !== 1 ||
     !Array.isArray(p.habits) ||
     !Array.isArray(p.checkins) ||
-    !Array.isArray(p.settings)
+    !Array.isArray(p.settings) ||
+    !p.habits.every(isHabitRow) ||
+    !p.checkins.every(isCheckinRow) ||
+    !p.settings.every(isSettingRow)
   ) {
     return Promise.reject(new Error('Not a valid habit-tracker backup file.'));
   }

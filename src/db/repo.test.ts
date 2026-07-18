@@ -159,6 +159,47 @@ describe('export and import', () => {
 
     expect((await getActiveHabits()).map((h) => h.id)).toEqual([id]);
   });
+
+  test('malformed rows reject the whole file, existing data untouched', async () => {
+    const id = await createHabit(draft('Keep me'));
+    const valid = await exportData();
+
+    // Habit missing sortOrder would silently vanish from orderBy('sortOrder').
+    const badHabit = {
+      ...valid,
+      habits: [{ ...valid.habits[0], sortOrder: undefined }],
+    };
+    await expect(importData(badHabit)).rejects.toThrow(/valid/i);
+
+    // Checkin with a non-string date breaks the compound key contract.
+    const badCheckin = {
+      ...valid,
+      checkins: [{ habitId: id, date: 20260718, value: 1, updatedAt: 'x' }],
+    };
+    await expect(importData(badCheckin)).rejects.toThrow(/valid/i);
+
+    // Setting without a key can't be stored under '&key'.
+    const badSetting = { ...valid, settings: [{ value: true }] };
+    await expect(importData(badSetting)).rejects.toThrow(/valid/i);
+
+    expect((await getActiveHabits()).map((h) => h.id)).toEqual([id]);
+  });
+
+  test('rows with extra unknown fields still import (forward-friendly)', async () => {
+    const id = await createHabit(draft('Keep me'));
+    await putCheckin({ habitId: id, date: '2026-07-18', value: 1 });
+    const backup = await exportData();
+    const withExtras = {
+      ...backup,
+      habits: backup.habits.map((h) => ({ ...h, futureField: 'ok' })),
+      checkins: backup.checkins.map((c) => ({ ...c, futureField: 1 })),
+    };
+
+    await importData(withExtras);
+
+    expect((await getActiveHabits()).map((h) => h.name)).toEqual(['Keep me']);
+    expect(await getCheckinsForHabit(id, '2000-01-01')).toHaveLength(1);
+  });
 });
 
 describe('settings', () => {
