@@ -386,3 +386,53 @@ body {
   cursor: pointer;
   padding: 0;
 }
+
+.settings-screen h1 {
+  font-size: 1.25rem;
+}
+
+.settings-screen h2 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.25rem;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.archived-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.archived-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--color-surface);
+  border-radius: 0.6rem;
+  padding: 0.6rem 0.8rem;
+}
+
+.archived-list li span {
+  flex: 1;
+}
+
+.archived-list button {
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.archived-list button.danger {
+  color: #dc2626;
+}
