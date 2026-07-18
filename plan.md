@@ -215,10 +215,10 @@ Deliberately **not** in the store:
 
 ### Phase 5 — Reminders + management polish
 
-- [ ] `lib/notifications.ts`: permission request flow (triggered from Settings, never on load), per-habit `reminderTime`, scheduler that on app start/focus computes next due reminder and sets a timer; fires via `registration.showNotification()`; skips habits already completed today
-- [ ] Honest degradation: Settings copy states reminders fire only while the app is open (background push needs a server); if permission is denied, reminder UI is disabled with an explanatory note
-- [ ] `SettingsScreen` complete: archived list, unarchive, hard delete with confirm
-- [ ] Habit reordering on check-in screen (`reorderHabits`)
+- [x] `lib/notifications.ts`: permission request flow (triggered from Settings, never on load), per-habit `reminderTime`, scheduler that on app start/focus computes next due reminder and sets a timer; fires via `registration.showNotification()`; skips habits already completed today — *fire path verified by fake-timer tests; a real 2-minute notification needs granted permission on a real machine*
+- [x] Honest degradation: Settings copy states reminders fire only while the app is open (background push needs a server); if permission is denied, reminder UI is disabled with an explanatory note — *denied path verified live in the browser*
+- [x] `SettingsScreen` complete: archived list, unarchive, hard delete with confirm
+- [x] Habit reordering on check-in screen (`reorderHabits`)
 
 **Verify:** Set a reminder 2 minutes out, keep app open → notification fires; complete the habit first → it doesn't. Deny permission → UI degrades as described. Archive/unarchive/delete round-trip preserves or removes history correctly.
 
