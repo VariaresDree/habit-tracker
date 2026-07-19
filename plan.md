@@ -233,6 +233,17 @@ Deliberately **not** in the store:
 
 **Live URL:** https://variaresdree.github.io/habit-tracker/
 
+### Phase 7 — v2 data migration (audit sequencing step 3)
+
+- [x] Gating bug fixes: scheduler double-fire race, import row validation, stats-window clamp to habit existence
+- [x] UUID identity via the 5-version Dexie chain (PKs can't change in place — tmp-table recipe, one upgrade transaction), with `backupV1` insurance copy of raw v1 rows
+- [x] Sync metadata on every row: `updatedAt`, `syncStatus`, `userId` (null until sign-in), `deletedAt` tombstones; deletes tombstone + purge instead of erase
+- [x] Outbox table with atomic entity+outbox dual-writes in every repo mutation (idempotency UUIDs)
+- [x] `completedAt` on check-ins (transition-into-completion; same-day backfill rule for migrated rows) — feeds adaptive reminders later
+- [x] `BackupV2`; V1 backup files import forever via the shared migration transforms; import clears the outbox (new wholesale truth)
+- [x] Live in-place migration rehearsal: genuine v1 DB (2 habits / 167 check-ins) migrated in the browser — all stats identical after (20% · 6/30 · 135 glasses; streaks 2/6), completedAt on exactly the 95 completed same-day rows, settings untouched
+- Decisions (2026-07-18): single active account per device; sign-out keeps local data; audit's outbox pattern; badges derived not stored
+
 ## Out of Scope (revisited with Phase 6)
 
 - ~~Data export/import~~ — shipped in Phase 6
