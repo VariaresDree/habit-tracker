@@ -37,7 +37,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const unarchive = async (id: number) => {
+  const unarchive = async (id: string) => {
     await unarchiveHabit(id);
     await refreshArchived();
   };

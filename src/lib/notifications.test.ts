@@ -4,17 +4,21 @@ import { useAppStore } from '../store/useAppStore';
 import { todayKey } from './dates';
 import { nextReminder, startReminderScheduler } from './notifications';
 
-const habit = (id: number, reminderTime: string | null, overrides: Partial<Habit> = {}): Habit => ({
-  id,
-  name: `Habit ${id}`,
+const habit = (n: number, reminderTime: string | null, overrides: Partial<Habit> = {}): Habit => ({
+  id: `habit-${n}`,
+  name: `Habit ${n}`,
   emoji: '✨',
   color: '#10b981',
   type: 'binary',
   target: 1,
   reminderTime,
-  sortOrder: id,
+  sortOrder: n,
   createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
   archivedAt: null,
+  deletedAt: null,
+  userId: null,
+  syncStatus: 'pending',
   ...overrides,
 });
 
@@ -23,7 +27,7 @@ describe('nextReminder', () => {
 
   test('picks the earliest future reminder today', () => {
     const result = nextReminder([habit(1, '12:00'), habit(2, '10:00')], {}, now);
-    expect(result?.habit.id).toBe(2);
+    expect(result?.habit.id).toBe('habit-2');
     expect(new Date(result!.at)).toEqual(new Date(2026, 6, 18, 10, 0));
   });
 
@@ -33,13 +37,13 @@ describe('nextReminder', () => {
   });
 
   test('a habit completed today is deferred to tomorrow', () => {
-    const result = nextReminder([habit(1, '10:00')], { 1: 1 }, now);
+    const result = nextReminder([habit(1, '10:00')], { 'habit-1': 1 }, now);
     expect(new Date(result!.at)).toEqual(new Date(2026, 6, 19, 10, 0));
   });
 
   test('a partially complete countable habit still reminds today', () => {
     const h = habit(1, '10:00', { type: 'count', target: 8 });
-    const result = nextReminder([h], { 1: 5 }, now);
+    const result = nextReminder([h], { 'habit-1': 5 }, now);
     expect(new Date(result!.at)).toEqual(new Date(2026, 6, 18, 10, 0));
   });
 

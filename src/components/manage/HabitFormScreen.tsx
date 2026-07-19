@@ -9,7 +9,7 @@ export default function HabitFormScreen() {
   const habits = useAppStore((s) => s.habits);
   const addHabit = useAppStore((s) => s.addHabit);
   const updateHabit = useAppStore((s) => s.updateHabit);
-  const editing = id ? habits.find((h) => h.id === Number(id)) : undefined;
+  const editing = id ? habits.find((h) => h.id === id) : undefined;
 
   const [name, setName] = useState(editing?.name ?? '');
   const [emoji, setEmoji] = useState(editing?.emoji ?? '✨');

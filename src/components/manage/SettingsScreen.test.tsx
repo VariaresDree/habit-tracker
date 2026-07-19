@@ -114,7 +114,7 @@ describe('data section', () => {
       reader.readAsText(capturedBlob!);
     });
     const backup = JSON.parse(blobText);
-    expect(backup.version).toBe(1);
+    expect(backup.version).toBe(2);
     expect(backup.habits.map((h: { name: string }) => h.name)).toEqual(['Meditate']);
     clickSpy.mockRestore();
     vi.unstubAllGlobals();

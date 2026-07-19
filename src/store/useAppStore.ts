@@ -11,26 +11,26 @@ interface AppState {
   status: 'loading' | 'ready';
   habits: Habit[];
   selectedDate: string;
-  checkins: Record<number, number>;
+  checkins: Record<string, number>;
   notificationsEnabled: boolean;
   theme: Theme;
 
   hydrate: () => Promise<void>;
   setSelectedDate: (date: string) => Promise<void>;
-  addHabit: (draft: NewHabitDraft) => Promise<number>;
-  updateHabit: (id: number, patch: Partial<Habit>) => Promise<void>;
-  archiveHabit: (id: number) => Promise<void>;
-  unarchiveHabit: (id: number) => Promise<void>;
-  deleteHabit: (id: number) => Promise<void>;
-  reorderHabits: (idsInOrder: number[]) => Promise<void>;
-  toggleCheckin: (habitId: number) => Promise<void>;
-  setCheckinValue: (habitId: number, value: number) => Promise<void>;
+  addHabit: (draft: NewHabitDraft) => Promise<string>;
+  updateHabit: (id: string, patch: Partial<Habit>) => Promise<void>;
+  archiveHabit: (id: string) => Promise<void>;
+  unarchiveHabit: (id: string) => Promise<void>;
+  deleteHabit: (id: string) => Promise<void>;
+  reorderHabits: (idsInOrder: string[]) => Promise<void>;
+  toggleCheckin: (habitId: string) => Promise<void>;
+  setCheckinValue: (habitId: string, value: number) => Promise<void>;
   setNotificationsEnabled: (enabled: boolean) => Promise<void>;
   setTheme: (theme: Theme) => Promise<void>;
 }
 
-function toValueMap(rows: Checkin[]): Record<number, number> {
-  const map: Record<number, number> = {};
+function toValueMap(rows: Checkin[]): Record<string, number> {
+  const map: Record<string, number> = {};
   for (const row of rows) map[row.habitId] = row.value;
   return map;
 }
@@ -103,15 +103,18 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   toggleCheckin: async (habitId) => {
-    const { selectedDate, checkins } = get();
+    const { selectedDate, checkins, habits } = get();
+    const target = habits.find((h) => h.id === habitId)?.target ?? 1;
     const value = (checkins[habitId] ?? 0) >= 1 ? 0 : 1;
-    await repo.putCheckin({ habitId, date: selectedDate, value });
+    await repo.putCheckin({ habitId, date: selectedDate, value }, target);
     set({ checkins: { ...get().checkins, [habitId]: value } });
   },
 
   setCheckinValue: async (habitId, value) => {
+    const { selectedDate, habits } = get();
+    const target = habits.find((h) => h.id === habitId)?.target ?? 1;
     const clamped = Math.max(0, value);
-    await repo.putCheckin({ habitId, date: get().selectedDate, value: clamped });
+    await repo.putCheckin({ habitId, date: selectedDate, value: clamped }, target);
     set({ checkins: { ...get().checkins, [habitId]: clamped } });
   },
 

@@ -9,7 +9,7 @@ import StreakBadge from './StreakBadge';
 export default function HabitDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const habitId = Number(id);
+  const habitId = id ?? '';
   const habit = useAppStore((s) => s.habits.find((h) => h.id === habitId));
   const archiveHabit = useAppStore((s) => s.archiveHabit);
   const deleteHabit = useAppStore((s) => s.deleteHabit);

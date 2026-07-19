@@ -31,9 +31,9 @@ export async function seedDemoData(): Promise<void> {
   for (let i = 1; i <= 90; i++) {
     const date = addDays(today, -i);
     if (i % 7 !== 3) {
-      await repo.putCheckin({ habitId: meditateId, date, value: 1 });
+      await repo.putCheckin({ habitId: meditateId, date, value: 1 }, 1);
     }
-    await repo.putCheckin({ habitId: waterId, date, value: (i * 3) % 10 });
+    await repo.putCheckin({ habitId: waterId, date, value: (i * 3) % 10 }, 8);
   }
 
   location.reload();

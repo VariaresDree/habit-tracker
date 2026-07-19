@@ -38,7 +38,7 @@ beforeEach(async () => {
 describe('hydrate', () => {
   test('loads active habits and the selected date check-ins, then flips to ready', async () => {
     const id = await repo.createHabit(draft('Drink water'));
-    await repo.putCheckin({ habitId: id, date: today, value: 1 });
+    await repo.putCheckin({ habitId: id, date: today, value: 1 }, 1);
 
     await useAppStore.getState().hydrate();
 
@@ -111,7 +111,7 @@ describe('setSelectedDate', () => {
   test('switches the date and loads that date check-ins (backfill)', async () => {
     await useAppStore.getState().hydrate();
     const id = await useAppStore.getState().addHabit(draft('Drink water'));
-    await repo.putCheckin({ habitId: id, date: yesterday, value: 1 });
+    await repo.putCheckin({ habitId: id, date: yesterday, value: 1 }, 1);
 
     await useAppStore.getState().setSelectedDate(yesterday);
 

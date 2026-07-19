@@ -20,7 +20,7 @@ function reminderDate(base: Date, reminderTime: string, dayOffset: number): Date
 // a time already past today also rolls to tomorrow (tomorrow starts fresh).
 export function nextReminder(
   habits: Habit[],
-  todayCheckins: Record<number, number>,
+  todayCheckins: Record<string, number>,
   now: Date,
 ): ReminderCandidate | null {
   let best: ReminderCandidate | null = null;
@@ -85,14 +85,14 @@ export function startReminderScheduler(
     const { habits } = useAppStore.getState();
     const rows = await repo.getCheckinsForDate(todayKey());
     if (stopped || gen !== generation) return;
-    const todayCheckins: Record<number, number> = {};
+    const todayCheckins: Record<string, number> = {};
     for (const row of rows) todayCheckins[row.habitId] = row.value;
     const next = nextReminder(habits, todayCheckins, new Date());
     if (!next) return;
     timer = setTimeout(() => void fire(next.habit.id), Math.max(0, next.at - Date.now()));
   };
 
-  const fire = async (habitId: number) => {
+  const fire = async (habitId: string) => {
     const habit = useAppStore.getState().habits.find((h) => h.id === habitId);
     const rows = await repo.getCheckinsForDate(todayKey());
     if (stopped) return;

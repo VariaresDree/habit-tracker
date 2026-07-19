@@ -42,8 +42,8 @@ beforeEach(async () => {
 describe('HabitDetailScreen', () => {
   test('composes streaks, heatmap, and stats from seeded history', async () => {
     const id = await useAppStore.getState().addHabit(draft('Meditate'));
-    await repo.putCheckin({ habitId: id, date: addDays(today, -1), value: 1 });
-    await repo.putCheckin({ habitId: id, date: addDays(today, -2), value: 1 });
+    await repo.putCheckin({ habitId: id, date: addDays(today, -1), value: 1 }, 1);
+    await repo.putCheckin({ habitId: id, date: addDays(today, -2), value: 1 }, 1);
     renderAt(`/habit/${id}`);
 
     expect(screen.getByRole('heading', { name: /meditate/i })).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('HabitDetailScreen', () => {
 
   test('checking in elsewhere live-updates an open detail screen', async () => {
     const id = await useAppStore.getState().addHabit(draft('Meditate'));
-    await repo.putCheckin({ habitId: id, date: addDays(today, -1), value: 1 });
+    await repo.putCheckin({ habitId: id, date: addDays(today, -1), value: 1 }, 1);
     renderAt(`/habit/${id}`);
     await waitFor(() => expect(screen.getByLabelText(/current streak/i)).toHaveTextContent('1'));
 

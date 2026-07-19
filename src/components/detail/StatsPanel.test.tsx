@@ -7,7 +7,7 @@ import StatsPanel from './StatsPanel';
 const today = todayKey();
 
 const habit = (overrides: Partial<Habit> = {}): Habit => ({
-  id: 1,
+  id: 'habit-1',
   name: 'Water',
   emoji: '💧',
   color: '#10b981',
@@ -17,7 +17,11 @@ const habit = (overrides: Partial<Habit> = {}): Habit => ({
   sortOrder: 1,
   // Old enough that the 30/90-day windows are never clamped by habit age.
   createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
   archivedAt: null,
+  deletedAt: null,
+  userId: null,
+  syncStatus: 'pending',
   ...overrides,
 });
 
