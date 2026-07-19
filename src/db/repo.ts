@@ -1,31 +1,191 @@
-import { db, type Checkin, type Habit, type NewHabitDraft, type Setting } from './db';
+import {
+  db,
+  migrateV1Checkin,
+  migrateV1Habit,
+  type Checkin,
+  type CheckinV1,
+  type Habit,
+  type HabitV1,
+  type NewHabitDraft,
+  type Setting,
+} from './db';
 
-export interface BackupV1 {
-  version: 1;
+// ---------------------------------------------------------------------------
+// Outbox: every mutation dual-writes its op in the same transaction, so an
+// unsynced local write can never exist without a queued upload (CLAUDE.md:
+// unsynced local writes are never dropped). Draining happens in the sync
+// engine (step 4); until then ops simply accumulate.
+// ---------------------------------------------------------------------------
+
+function enqueue(op: 'upsert' | 'delete', table: 'habits' | 'checkins', key: string, payload: unknown) {
+  return db.outbox.add({
+    op,
+    table,
+    key,
+    payload,
+    idempotencyKey: crypto.randomUUID(),
+    queuedAt: new Date().toISOString(),
+    attempts: 0,
+  });
+}
+
+const checkinKey = (habitId: string, date: string) => `${habitId}|${date}`;
+
+// ---------------------------------------------------------------------------
+// Habits
+// ---------------------------------------------------------------------------
+
+export function getActiveHabits(): Promise<Habit[]> {
+  // IndexedDB can't index null values, so these filters run in JS.
+  return db.habits
+    .orderBy('sortOrder')
+    .filter((h) => h.archivedAt === null && h.deletedAt === null)
+    .toArray();
+}
+
+export function getArchivedHabits(): Promise<Habit[]> {
+  return db.habits
+    .orderBy('sortOrder')
+    .filter((h) => h.archivedAt !== null && h.deletedAt === null)
+    .toArray();
+}
+
+export async function getHabit(id: string): Promise<Habit | undefined> {
+  const habit = await db.habits.get(id);
+  return habit && habit.deletedAt === null ? habit : undefined;
+}
+
+export function createHabit(draft: NewHabitDraft): Promise<string> {
+  return db.transaction('rw', db.habits, db.outbox, async () => {
+    const now = new Date().toISOString();
+    const last = await db.habits.orderBy('sortOrder').last();
+    const habit: Habit = {
+      ...draft,
+      id: crypto.randomUUID(),
+      sortOrder: (last?.sortOrder ?? 0) + 1,
+      createdAt: now,
+      updatedAt: now,
+      archivedAt: null,
+      deletedAt: null,
+      userId: null,
+      syncStatus: 'pending',
+    };
+    await db.habits.add(habit);
+    await enqueue('upsert', 'habits', habit.id, habit);
+    return habit.id;
+  });
+}
+
+export function updateHabit(id: string, patch: Partial<Habit>): Promise<void> {
+  return db.transaction('rw', db.habits, db.outbox, async () => {
+    await db.habits.update(id, {
+      ...patch,
+      updatedAt: new Date().toISOString(),
+      syncStatus: 'pending',
+    });
+    const row = await db.habits.get(id);
+    if (row) await enqueue('upsert', 'habits', id, row);
+  });
+}
+
+export function archiveHabit(id: string): Promise<void> {
+  return updateHabit(id, { archivedAt: new Date().toISOString() });
+}
+
+export function deleteHabitAndCheckins(id: string): Promise<void> {
+  // Tombstone, don't erase: a hard delete would silently resurrect on the
+  // first pull from another device. Local check-ins are purged; the server
+  // cascades them from the habit delete op (step 4 contract).
+  return db.transaction('rw', db.habits, db.checkins, db.outbox, async () => {
+    const now = new Date().toISOString();
+    await db.checkins.where('habitId').equals(id).delete();
+    await db.habits.update(id, { deletedAt: now, updatedAt: now, syncStatus: 'pending' });
+    await enqueue('delete', 'habits', id, { id, deletedAt: now });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Checkins
+// ---------------------------------------------------------------------------
+
+export function getCheckinsForDate(date: string): Promise<Checkin[]> {
+  return db.checkins.where('date').equals(date).toArray();
+}
+
+export function getCheckinsForHabit(habitId: string, fromDate: string): Promise<Checkin[]> {
+  // Compound-index range scan; results come back in index order (date ascending).
+  // Upper bound: U+FFFF sorts after every possible date key.
+  return db.checkins
+    .where('[habitId+date]')
+    .between([habitId, fromDate], [habitId, '￿'])
+    .toArray();
+}
+
+export function putCheckin(
+  entry: Pick<Checkin, 'habitId' | 'date' | 'value'>,
+  target: number,
+): Promise<void> {
+  return db.transaction('rw', db.checkins, db.outbox, async () => {
+    const now = new Date().toISOString();
+    const prev = await db.checkins.get([entry.habitId, entry.date]);
+    const wasComplete = (prev?.value ?? 0) >= target;
+    const isComplete = entry.value >= target;
+    // completedAt marks the transition into completion and survives further
+    // increments; dropping below target clears it.
+    const completedAt = isComplete ? (wasComplete ? (prev?.completedAt ?? now) : now) : null;
+    const row: Checkin = {
+      ...entry,
+      updatedAt: now,
+      completedAt,
+      userId: prev?.userId ?? null,
+      syncStatus: 'pending',
+    };
+    await db.checkins.put(row);
+    await enqueue('upsert', 'checkins', checkinKey(entry.habitId, entry.date), row);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Settings (device-local, never synced)
+// ---------------------------------------------------------------------------
+
+export async function getSetting<T = unknown>(key: string): Promise<T | undefined> {
+  const row = await db.settings.get(key);
+  return row?.value as T | undefined;
+}
+
+export async function putSetting(key: string, value: unknown): Promise<void> {
+  await db.settings.put({ key, value });
+}
+
+// ---------------------------------------------------------------------------
+// Backup: V2 is current; V1 files stay importable forever via the same
+// transforms the migration uses.
+// ---------------------------------------------------------------------------
+
+export interface BackupV2 {
+  version: 2;
   exportedAt: string;
   habits: Habit[];
   checkins: Checkin[];
   settings: Setting[];
 }
 
-export async function exportData(): Promise<BackupV1> {
+export async function exportData(): Promise<BackupV2> {
   const [habits, checkins, settings] = await Promise.all([
-    db.habits.toArray(),
+    db.habits.filter((h) => h.deletedAt === null).toArray(),
     db.checkins.toArray(),
     db.settings.toArray(),
   ]);
-  return { version: 1, exportedAt: new Date().toISOString(), habits, checkins, settings };
+  return { version: 2, exportedAt: new Date().toISOString(), habits, checkins, settings };
 }
 
-// Row validators: a malformed row (e.g. a habit without sortOrder) would
-// import cleanly and then silently vanish from indexed queries. Unknown
-// extra fields are allowed so newer backups stay readable.
-function isHabitRow(row: unknown): boolean {
-  const h = row as Record<string, unknown> | null;
+function isRecord(row: unknown): row is Record<string, unknown> {
+  return !!row && typeof row === 'object';
+}
+
+function hasHabitCore(h: Record<string, unknown>): boolean {
   return (
-    !!h &&
-    typeof h === 'object' &&
-    typeof h.id === 'number' &&
     typeof h.name === 'string' &&
     typeof h.emoji === 'string' &&
     typeof h.color === 'string' &&
@@ -39,12 +199,22 @@ function isHabitRow(row: unknown): boolean {
   );
 }
 
-function isCheckinRow(row: unknown): boolean {
-  const c = row as Record<string, unknown> | null;
+function isHabitRowV1(row: unknown): boolean {
+  return isRecord(row) && typeof row.id === 'number' && hasHabitCore(row);
+}
+
+function isHabitRowV2(row: unknown): boolean {
   return (
-    !!c &&
-    typeof c === 'object' &&
-    typeof c.habitId === 'number' &&
+    isRecord(row) &&
+    typeof row.id === 'string' &&
+    hasHabitCore(row) &&
+    typeof row.updatedAt === 'string' &&
+    (row.deletedAt === null || typeof row.deletedAt === 'string')
+  );
+}
+
+function hasCheckinCore(c: Record<string, unknown>): boolean {
+  return (
     typeof c.date === 'string' &&
     /^\d{4}-\d{2}-\d{2}$/.test(c.date) &&
     typeof c.value === 'number' &&
@@ -52,104 +222,92 @@ function isCheckinRow(row: unknown): boolean {
   );
 }
 
-function isSettingRow(row: unknown): boolean {
-  const s = row as Record<string, unknown> | null;
-  return !!s && typeof s === 'object' && typeof s.key === 'string';
+function isCheckinRowV1(row: unknown): boolean {
+  return isRecord(row) && typeof row.habitId === 'number' && hasCheckinCore(row);
 }
 
-export function importData(payload: unknown): Promise<void> {
-  const p = payload as Partial<BackupV1> | null;
+function isCheckinRowV2(row: unknown): boolean {
+  return (
+    isRecord(row) &&
+    typeof row.habitId === 'string' &&
+    hasCheckinCore(row) &&
+    (row.completedAt === null || typeof row.completedAt === 'string')
+  );
+}
+
+function isSettingRow(row: unknown): boolean {
+  return isRecord(row) && typeof row.key === 'string';
+}
+
+interface ParsedBackup {
+  habits: Habit[];
+  checkins: Checkin[];
+  settings: Setting[];
+}
+
+function parseBackup(payload: unknown): ParsedBackup | null {
+  const p = payload as Record<string, unknown> | null;
   if (
     !p ||
     typeof p !== 'object' ||
-    p.version !== 1 ||
     !Array.isArray(p.habits) ||
     !Array.isArray(p.checkins) ||
     !Array.isArray(p.settings) ||
-    !p.habits.every(isHabitRow) ||
-    !p.checkins.every(isCheckinRow) ||
     !p.settings.every(isSettingRow)
   ) {
+    return null;
+  }
+
+  if (p.version === 2) {
+    if (!p.habits.every(isHabitRowV2) || !p.checkins.every(isCheckinRowV2)) return null;
+    return {
+      habits: (p.habits as Habit[]).map((h) => ({ ...h, syncStatus: 'pending' as const })),
+      checkins: (p.checkins as Checkin[]).map((c) => ({ ...c, syncStatus: 'pending' as const })),
+      settings: p.settings as Setting[],
+    };
+  }
+
+  if (p.version === 1) {
+    if (!p.habits.every(isHabitRowV1) || !p.checkins.every(isCheckinRowV1)) return null;
+    const v1Habits = p.habits as HabitV1[];
+    const v1Checkins = p.checkins as CheckinV1[];
+    const idMap = new Map<number, string>();
+    const targetMap = new Map<number, number>();
+    for (const h of v1Habits) {
+      idMap.set(h.id, crypto.randomUUID());
+      targetMap.set(h.id, h.target);
+    }
+    return {
+      habits: v1Habits.map((h) => migrateV1Habit(h, idMap.get(h.id)!)),
+      checkins: v1Checkins
+        .filter((c) => idMap.has(c.habitId))
+        .map((c) => migrateV1Checkin(c, idMap.get(c.habitId)!, targetMap.get(c.habitId)!)),
+      settings: p.settings as Setting[],
+    };
+  }
+
+  return null;
+}
+
+export function importData(payload: unknown): Promise<void> {
+  const parsed = parseBackup(payload);
+  if (!parsed) {
     return Promise.reject(new Error('Not a valid habit-tracker backup file.'));
   }
-  // Replace-all semantics in one transaction: either the whole backup lands
-  // or nothing changes.
-  return db.transaction('rw', db.habits, db.checkins, db.settings, async () => {
-    await Promise.all([db.habits.clear(), db.checkins.clear(), db.settings.clear()]);
+  // Replace-all in one transaction — and the outbox is cleared too: an
+  // import is a new wholesale local truth to be uploaded in full by the
+  // sync engine, never replayed op-by-op (audit §5.4).
+  return db.transaction('rw', db.habits, db.checkins, db.settings, db.outbox, async () => {
     await Promise.all([
-      db.habits.bulkAdd(p.habits as Habit[]),
-      db.checkins.bulkAdd(p.checkins as Checkin[]),
-      db.settings.bulkAdd(p.settings as Setting[]),
+      db.habits.clear(),
+      db.checkins.clear(),
+      db.settings.clear(),
+      db.outbox.clear(),
+    ]);
+    await Promise.all([
+      db.habits.bulkAdd(parsed.habits),
+      db.checkins.bulkAdd(parsed.checkins),
+      db.settings.bulkAdd(parsed.settings),
     ]);
   });
-}
-
-export function getActiveHabits(): Promise<Habit[]> {
-  // IndexedDB can't index null values, so the active filter runs in JS.
-  return db.habits
-    .orderBy('sortOrder')
-    .filter((h) => h.archivedAt === null)
-    .toArray();
-}
-
-export function getArchivedHabits(): Promise<Habit[]> {
-  return db.habits
-    .orderBy('sortOrder')
-    .filter((h) => h.archivedAt !== null)
-    .toArray();
-}
-
-export function getHabit(id: number): Promise<Habit | undefined> {
-  return db.habits.get(id);
-}
-
-export async function createHabit(draft: NewHabitDraft): Promise<number> {
-  const last = await db.habits.orderBy('sortOrder').last();
-  return db.habits.add({
-    ...draft,
-    sortOrder: (last?.sortOrder ?? 0) + 1,
-    createdAt: new Date().toISOString(),
-    archivedAt: null,
-  });
-}
-
-export async function updateHabit(id: number, patch: Partial<Habit>): Promise<void> {
-  await db.habits.update(id, patch);
-}
-
-export async function archiveHabit(id: number): Promise<void> {
-  await db.habits.update(id, { archivedAt: new Date().toISOString() });
-}
-
-export function deleteHabitAndCheckins(id: number): Promise<void> {
-  return db.transaction('rw', db.habits, db.checkins, async () => {
-    await db.checkins.where('habitId').equals(id).delete();
-    await db.habits.delete(id);
-  });
-}
-
-export function getCheckinsForDate(date: string): Promise<Checkin[]> {
-  return db.checkins.where('date').equals(date).toArray();
-}
-
-export function getCheckinsForHabit(habitId: number, fromDate: string): Promise<Checkin[]> {
-  // Compound-index range scan; results come back in index order (date ascending).
-  // Upper bound: U+FFFF sorts after every possible date key.
-  return db.checkins
-    .where('[habitId+date]')
-    .between([habitId, fromDate], [habitId, '￿'])
-    .toArray();
-}
-
-export async function putCheckin(entry: Omit<Checkin, 'updatedAt'>): Promise<void> {
-  await db.checkins.put({ ...entry, updatedAt: new Date().toISOString() });
-}
-
-export async function getSetting<T = unknown>(key: string): Promise<T | undefined> {
-  const row = await db.settings.get(key);
-  return row?.value as T | undefined;
-}
-
-export async function putSetting(key: string, value: unknown): Promise<void> {
-  await db.settings.put({ key, value });
 }
