@@ -53,17 +53,23 @@ describe('binary habits', () => {
     const row = screen.getByRole('button', { name: /meditate/i });
     expect(row).toHaveAttribute('aria-pressed', 'false');
 
+    // The tap handler persists asynchronously (write-through to Dexie before
+    // memory), so attribute checks must retry rather than assert once.
     await user.click(row);
-    expect(await screen.findByRole('button', { name: /meditate/i })).toHaveAttribute(
-      'aria-pressed',
-      'true',
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /meditate/i })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
     );
     expect((await repo.getCheckinsForDate(today))[0]).toMatchObject({ habitId: id, value: 1 });
 
     await user.click(screen.getByRole('button', { name: /meditate/i }));
-    expect(await screen.findByRole('button', { name: /meditate/i })).toHaveAttribute(
-      'aria-pressed',
-      'false',
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /meditate/i })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      ),
     );
     expect((await repo.getCheckinsForDate(today))[0]).toMatchObject({ habitId: id, value: 0 });
   });
@@ -141,8 +147,9 @@ describe('date navigation', () => {
     expect(await screen.findByRole('heading', { name: 'Yesterday' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /meditate/i }));
-    await screen.findByRole('button', { name: /meditate/i });
-    expect((await repo.getCheckinsForDate(yesterday))[0]).toMatchObject({ value: 1 });
+    await waitFor(async () =>
+      expect((await repo.getCheckinsForDate(yesterday))[0]).toMatchObject({ value: 1 }),
+    );
     expect(await repo.getCheckinsForDate(today)).toEqual([]);
   });
 
