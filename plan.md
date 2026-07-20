@@ -257,6 +257,20 @@ Deliberately **not** in the store:
 
 **Shared database note:** the account limit allowed no third free project, so these tables live in the `budget-tracker-sync` project alongside its `vaults` table (isolated by RLS; one login serves both personal apps).
 
+### Phase 9 — UI/UX rebrand ("understand my day at a glance")
+
+Inspired by Productive, executed in this app's calmer register. Presentation layer only — no `db`/`repo`/`sync`/store-logic changes, no new dependencies.
+
+- [x] **Design tokens**: spacing/radius/type/elevation/motion + semantic colour roles, defined for both themes; components no longer hardcode values
+- [x] **Vector icons** (`components/common/Icon.tsx`): hand-drawn inline SVG set replacing the text glyphs (`‹ › ↑ ↓ ⇅ ✓ − +`), keeping zero dependencies
+- [x] **Accessibility defects fixed**: tap targets 36–40px → 44px; accent colour failed contrast as text (2.3:1 → 5.3:1 light, 9.5:1 dark); `aria-live` on counts; `:focus-visible` rings; `prefers-reduced-motion` honoured
+- [x] **Daily progress ring** (`DayProgress`): "N of M done" + remaining, stated in words so nothing depends on colour alone
+- [x] **Habit cards**: colour-tinted identity chip, progress bar for countable habits, check icon on completion
+- [x] **Navigation**: Today / Habits / Settings — destinations only; "+" is an action on the screens that need it
+- [x] **Habits screen**: reorder, archive/restore, delete — moved off Today (which is now purely "what do I do now") and out of Settings (now purely preferences)
+- [x] **Starter templates + pickers**: six one-tap examples, emoji picker grid, curated colour swatches, segmented type control, live preview
+- Verified: 190 tests green, CI green, 375px and wider, light and dark, no horizontal overflow, contrast measured in both themes
+
 ## Out of Scope (revisited with Phase 6)
 
 - ~~Data export/import~~ — shipped in Phase 6
