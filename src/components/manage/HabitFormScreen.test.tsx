@@ -73,6 +73,76 @@ describe('creating', () => {
   });
 });
 
+describe('starter templates and pickers', () => {
+  test('a template fills the whole form in one tap', async () => {
+    const user = userEvent.setup();
+    renderAt('/new');
+
+    await user.click(screen.getByRole('button', { name: /drink water/i }));
+
+    expect(screen.getByLabelText(/name/i)).toHaveValue('Drink water');
+    expect(screen.getByRole('radio', { name: /countable/i })).toBeChecked();
+    expect(screen.getByLabelText(/daily target/i)).toHaveValue(8);
+    expect(screen.getByLabelText(/unit/i)).toHaveValue('glasses');
+  });
+
+  test('a templated habit can be saved as-is', async () => {
+    const user = userEvent.setup();
+    renderAt('/new');
+
+    await user.click(screen.getByRole('button', { name: /meditate/i }));
+    await user.click(screen.getByRole('button', { name: /create habit/i }));
+    await screen.findByText('TODAY_SCREEN');
+
+    expect((await repo.getActiveHabits())[0]).toMatchObject({
+      name: 'Meditate',
+      type: 'binary',
+      target: 1,
+    });
+  });
+
+  test('the preview follows what is being typed', async () => {
+    const user = userEvent.setup();
+    const { container } = renderAt('/new');
+
+    expect(container.querySelector('.habit-preview')).toHaveTextContent('Your habit');
+    await user.type(screen.getByLabelText(/name/i), 'Journal');
+    expect(container.querySelector('.habit-preview')).toHaveTextContent('Journal');
+  });
+
+  test('icon and colour are chosen from pickers, not typed', async () => {
+    const user = userEvent.setup();
+    renderAt('/new');
+
+    await user.click(screen.getByRole('button', { name: 'Icon 📖' }));
+    expect(screen.getByRole('button', { name: 'Icon 📖' })).toHaveAttribute('aria-pressed', 'true');
+
+    const swatch = screen.getByRole('button', { name: /colour #7c3aed/i });
+    await user.click(swatch);
+    expect(swatch).toHaveAttribute('aria-pressed', 'true');
+
+    await user.type(screen.getByLabelText(/name/i), 'Read');
+    await user.click(screen.getByRole('button', { name: /create habit/i }));
+    await screen.findByText('TODAY_SCREEN');
+
+    expect((await repo.getActiveHabits())[0]).toMatchObject({ emoji: '📖', color: '#7c3aed' });
+  });
+
+  test('templates are not offered when editing an existing habit', async () => {
+    const id = await useAppStore.getState().addHabit({
+      name: 'Meditate',
+      emoji: '🧘',
+      color: '#3b82f6',
+      type: 'binary',
+      target: 1,
+      reminderTime: null,
+    });
+    renderAt(`/habit/${id}/edit`);
+
+    expect(screen.queryByText(/start from an example/i)).not.toBeInTheDocument();
+  });
+});
+
 describe('editing', () => {
   test('loads existing values, locks the type, and saves changes', async () => {
     const user = userEvent.setup();

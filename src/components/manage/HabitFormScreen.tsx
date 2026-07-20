@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { HABIT_COLORS, HABIT_EMOJIS, HABIT_TEMPLATES, type HabitTemplate } from '../../lib/templates';
 import { useAppStore } from '../../store/useAppStore';
 import EmptyState from '../common/EmptyState';
+import Icon from '../common/Icon';
 
 export default function HabitFormScreen() {
   const { id } = useParams();
@@ -13,7 +15,7 @@ export default function HabitFormScreen() {
 
   const [name, setName] = useState(editing?.name ?? '');
   const [emoji, setEmoji] = useState(editing?.emoji ?? '✨');
-  const [color, setColor] = useState(editing?.color ?? '#10b981');
+  const [color, setColor] = useState(editing?.color ?? HABIT_COLORS[0]);
   const [type, setType] = useState<'binary' | 'count'>(editing?.type ?? 'binary');
   // String state: coercing to number on each keystroke mangles cleared fields
   // (empty -> forced "1" -> typing "8" yields "18"). Parse on submit instead.
@@ -24,6 +26,16 @@ export default function HabitFormScreen() {
   if (id && !editing) {
     return <EmptyState message="Habit not found." />;
   }
+
+  const applyTemplate = (t: HabitTemplate) => {
+    setName(t.name);
+    setEmoji(t.emoji);
+    setColor(t.color);
+    setType(t.type);
+    setTarget(String(t.target));
+    setUnit(t.unit ?? '');
+    setReminderTime(t.reminderTime ?? '');
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -48,6 +60,36 @@ export default function HabitFormScreen() {
     <form className="habit-form" onSubmit={(e) => void submit(e)}>
       <h1>{editing ? 'Edit habit' : 'New habit'}</h1>
 
+      {!editing && (
+        <section className="templates">
+          <h2>Start from an example</h2>
+          <div className="template-row">
+            {HABIT_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className="template-chip"
+                onClick={() => applyTemplate(t)}
+              >
+                <span aria-hidden="true">{t.emoji}</span>
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Shows the decision being made, rather than describing it. */}
+      <div className="habit-preview" style={{ '--habit-color': color } as React.CSSProperties}>
+        <span className="habit-emoji">{emoji}</span>
+        <div className="habit-body">
+          <span className="habit-name">{name.trim() || 'Your habit'}</span>
+          <span className="preview-meta">
+            {type === 'binary' ? 'Done or not done' : `Goal: ${target || 1} ${unit || 'per day'}`}
+          </span>
+        </div>
+      </div>
+
       <label htmlFor="habit-name">Name</label>
       <input
         id="habit-name"
@@ -56,31 +98,47 @@ export default function HabitFormScreen() {
         placeholder="e.g. Drink water"
       />
 
-      <div className="form-row">
-        <div>
-          <label htmlFor="habit-emoji">Emoji</label>
-          <input
-            id="habit-emoji"
-            value={emoji}
-            onChange={(e) => setEmoji(e.target.value)}
-            maxLength={4}
-          />
+      <fieldset className="picker-group">
+        <legend>Icon</legend>
+        <div className="emoji-grid">
+          {HABIT_EMOJIS.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              className={choice === emoji ? 'emoji-choice selected' : 'emoji-choice'}
+              aria-pressed={choice === emoji}
+              aria-label={`Icon ${choice}`}
+              onClick={() => setEmoji(choice)}
+            >
+              {choice}
+            </button>
+          ))}
         </div>
-        <div>
-          <label htmlFor="habit-color">Color</label>
-          <input
-            id="habit-color"
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-          />
+      </fieldset>
+
+      <fieldset className="picker-group">
+        <legend>Colour</legend>
+        <div className="color-row">
+          {HABIT_COLORS.map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              className={choice === color ? 'color-choice selected' : 'color-choice'}
+              style={{ background: choice }}
+              aria-pressed={choice === color}
+              aria-label={`Colour ${choice}`}
+              onClick={() => setColor(choice)}
+            >
+              {choice === color && <Icon name="check" size={16} />}
+            </button>
+          ))}
         </div>
-      </div>
+      </fieldset>
 
       {/* Changing binary<->count would corrupt history semantics, so type locks after creation. */}
-      <fieldset disabled={!!editing}>
+      <fieldset className="segmented" disabled={!!editing}>
         <legend>Type</legend>
-        <label>
+        <label className={type === 'binary' ? 'segment selected' : 'segment'}>
           <input
             type="radio"
             name="habit-type"
@@ -89,7 +147,7 @@ export default function HabitFormScreen() {
           />
           Yes / no
         </label>
-        <label>
+        <label className={type === 'count' ? 'segment selected' : 'segment'}>
           <input
             type="radio"
             name="habit-type"

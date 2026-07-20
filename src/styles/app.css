@@ -635,6 +635,166 @@ body {
   margin-top: var(--space-3);
 }
 
+.habit-form h2 {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.template-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.template-chip:active {
+  transform: scale(0.96);
+}
+
+/* Live preview ---------------------------------------------------------- */
+
+.habit-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin: var(--space-2) 0 var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--habit-color, var(--accent));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.preview-meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Pickers --------------------------------------------------------------- */
+
+.picker-group {
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--space-2);
+  display: block;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--tap), 1fr));
+  gap: var(--space-2);
+}
+
+.emoji-choice {
+  min-height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: var(--text-lg);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.emoji-choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.emoji-choice:active {
+  transform: scale(0.92);
+}
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.color-choice {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  color: #fff;
+  cursor: pointer;
+}
+
+.color-choice.selected {
+  border-color: var(--text);
+}
+
+/* Segmented control ----------------------------------------------------- */
+
+.segmented {
+  border: none;
+  padding: 0;
+  margin: 0 0 var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.segmented legend {
+  float: left;
+  width: 100%;
+  margin-bottom: var(--space-1);
+}
+
+.segment {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.segment.selected {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: var(--shadow-1);
+}
+
+.segmented:disabled .segment {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The radio stays in the accessibility tree; only its default look goes. */
+.segment input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
 /* ---------------------------------------------------------------------------
    Detail: heatmap, streaks, stats
    --------------------------------------------------------------------------- */
