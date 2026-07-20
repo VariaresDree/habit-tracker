@@ -30,7 +30,7 @@ test('gates on hydration, then shows the Today screen with tab navigation', asyn
   const nav = await screen.findByRole('navigation');
   expect(nav).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Today' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'New' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Habits' })).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
 });
 

@@ -466,6 +466,79 @@ body {
   padding: var(--space-7) var(--space-4);
 }
 
+/* Habits (management) --------------------------------------------------- */
+
+.screen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.screen-header h1 {
+  font-size: var(--text-xl);
+  margin: 0;
+}
+
+.manage-list {
+  list-style: none;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.manage-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--habit-color, var(--accent));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.manage-name {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.manage-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.manage-actions button {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.manage-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.habits-screen h2 {
+  font-size: var(--text-base);
+  margin: var(--space-5) 0 var(--space-2);
+}
+
 .cta {
   display: inline-flex;
   align-items: center;

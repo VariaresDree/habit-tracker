@@ -109,29 +109,26 @@ describe('detail link', () => {
   });
 });
 
-describe('reordering', () => {
-  test('reorder mode moves a habit up and persists the new order', async () => {
+// Reordering now lives on the Habits screen — see HabitsScreen.test.tsx.
+// Today stays focused on "what do I do now".
+
+describe('daily progress', () => {
+  test('summarises the day above the list and updates as habits are completed', async () => {
     const user = userEvent.setup();
-    const idA = await useAppStore.getState().addHabit(draft('First'));
-    const idB = await useAppStore.getState().addHabit(draft('Second'));
+    await useAppStore.getState().addHabit(draft('Meditate'));
+    await useAppStore.getState().addHabit(draft('Stretch'));
     renderScreen();
 
-    await user.click(screen.getByRole('button', { name: /reorder habits/i }));
-    await user.click(screen.getByRole('button', { name: /move second up/i }));
+    expect(screen.getByText('0 of 2 done')).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(useAppStore.getState().habits.map((h) => h.id)).toEqual([idB, idA]),
-    );
-    expect((await repo.getActiveHabits()).map((h) => h.id)).toEqual([idB, idA]);
+    await user.click(screen.getByRole('button', { name: /meditate/i }));
 
-    await user.click(screen.getByRole('button', { name: /done reordering/i }));
-    expect(screen.queryByRole('button', { name: /move/i })).not.toBeInTheDocument();
+    expect(await screen.findByText('1 of 2 done')).toBeInTheDocument();
   });
 
-  test('reorder toggle is hidden with fewer than two habits', async () => {
-    await useAppStore.getState().addHabit(draft('Only'));
+  test('is not shown when there is nothing to track', () => {
     renderScreen();
-    expect(screen.queryByRole('button', { name: /reorder habits/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/of 0 done/i)).not.toBeInTheDocument();
   });
 });
 

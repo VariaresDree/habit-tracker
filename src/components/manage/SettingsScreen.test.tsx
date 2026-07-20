@@ -169,44 +169,4 @@ describe('data section', () => {
     confirmSpy.mockRestore();
   });
 });
-
-describe('archived habits section', () => {
-  test('shows a friendly empty state when nothing is archived', async () => {
-    render(<SettingsScreen />);
-    expect(await screen.findByText(/no archived habits/i)).toBeInTheDocument();
-  });
-
-  test('unarchive returns the habit to the active list', async () => {
-    const user = userEvent.setup();
-    const id = await useAppStore.getState().addHabit(draft('Meditate'));
-    await useAppStore.getState().archiveHabit(id);
-    render(<SettingsScreen />);
-
-    expect(await screen.findByText(/meditate/i)).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /unarchive meditate/i }));
-
-    await waitFor(() =>
-      expect(useAppStore.getState().habits.map((h) => h.id)).toEqual([id]),
-    );
-    expect(screen.queryByRole('button', { name: /unarchive meditate/i })).not.toBeInTheDocument();
-    expect((await repo.getHabit(id))?.archivedAt).toBeNull();
-  });
-
-  test('delete confirms then removes the habit and its history', async () => {
-    const user = userEvent.setup();
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-    const id = await useAppStore.getState().addHabit(draft('Meditate'));
-    await useAppStore.getState().toggleCheckin(id);
-    await useAppStore.getState().archiveHabit(id);
-    render(<SettingsScreen />);
-
-    await screen.findByText(/meditate/i);
-    await user.click(screen.getByRole('button', { name: /delete meditate/i }));
-
-    expect(confirmSpy).toHaveBeenCalledOnce();
-    await waitFor(async () => expect(await repo.getHabit(id)).toBeUndefined());
-    expect(await repo.getCheckinsForHabit(id, '2000-01-01')).toEqual([]);
-    expect(screen.queryByText(/meditate/i)).not.toBeInTheDocument();
-    confirmSpy.mockRestore();
-  });
-});
+// Archived-habit management moved to the Habits screen — see HabitsScreen.test.tsx.

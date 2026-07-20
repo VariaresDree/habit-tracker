@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import type { Habit } from '../../db/db';
+import { useState, type FormEvent } from 'react';
 import * as repo from '../../db/repo';
 import { todayKey } from '../../lib/dates';
 import {
@@ -11,8 +10,6 @@ import { useAppStore } from '../../store/useAppStore';
 export default function SettingsScreen() {
   const notificationsEnabled = useAppStore((s) => s.notificationsEnabled);
   const setNotificationsEnabled = useAppStore((s) => s.setNotificationsEnabled);
-  const unarchiveHabit = useAppStore((s) => s.unarchiveHabit);
-  const deleteHabit = useAppStore((s) => s.deleteHabit);
   const hydrate = useAppStore((s) => s.hydrate);
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
@@ -28,38 +25,17 @@ export default function SettingsScreen() {
   const syncNow = useAppStore((s) => s.syncNow);
 
   const [permission, setPermission] = useState<NotificationPermission>(getNotificationPermission);
-  const [archived, setArchived] = useState<Habit[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const refreshArchived = useCallback(async () => {
-    setArchived(await repo.getArchivedHabits());
-  }, []);
-
-  useEffect(() => {
-    void refreshArchived();
-  }, [refreshArchived]);
-
   const enable = async () => {
     const result = await requestNotificationPermission();
     setPermission(result);
     if (result === 'granted') {
       await setNotificationsEnabled(true);
-    }
-  };
-
-  const unarchive = async (id: string) => {
-    await unarchiveHabit(id);
-    await refreshArchived();
-  };
-
-  const remove = async (habit: Habit) => {
-    if (window.confirm(`Delete "${habit.name}" and all its history?`)) {
-      await deleteHabit(habit.id);
-      await refreshArchived();
     }
   };
 
@@ -282,32 +258,6 @@ export default function SettingsScreen() {
         )}
       </section>
 
-      <section>
-        <h2>Archived habits</h2>
-        {archived.length === 0 ? (
-          <p className="field-hint">No archived habits.</p>
-        ) : (
-          <ul className="archived-list">
-            {archived.map((habit) => (
-              <li key={habit.id}>
-                <span>
-                  {habit.emoji} {habit.name}
-                </span>
-                <button onClick={() => void unarchive(habit.id)} aria-label={`Unarchive ${habit.name}`}>
-                  Unarchive
-                </button>
-                <button
-                  className="danger"
-                  onClick={() => void remove(habit)}
-                  aria-label={`Delete ${habit.name}`}
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

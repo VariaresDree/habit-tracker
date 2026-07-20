@@ -1,10 +1,9 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addDays, todayKey } from '../../lib/dates';
 import { useAppStore } from '../../store/useAppStore';
-import DayProgress from './DayProgress';
 import EmptyState from '../common/EmptyState';
 import Icon from '../common/Icon';
+import DayProgress from './DayProgress';
 import HabitRow from './HabitRow';
 
 function dateLabel(date: string, today: string): string {
@@ -29,18 +28,8 @@ export default function CheckinScreen() {
   const checkins = useAppStore((s) => s.checkins);
   const selectedDate = useAppStore((s) => s.selectedDate);
   const setSelectedDate = useAppStore((s) => s.setSelectedDate);
-  const reorderHabits = useAppStore((s) => s.reorderHabits);
-  const [reordering, setReordering] = useState(false);
   const today = todayKey();
   const completed = habits.filter((h) => (checkins[h.id] ?? 0) >= h.target).length;
-
-  const move = (index: number, delta: number) => {
-    const ids = habits.map((h) => h.id);
-    const target = index + delta;
-    if (target < 0 || target >= ids.length) return;
-    [ids[index], ids[target]] = [ids[target], ids[index]];
-    void reorderHabits(ids);
-  };
 
   return (
     <div className="checkin-screen">
@@ -76,42 +65,11 @@ export default function CheckinScreen() {
           </Link>
         </EmptyState>
       ) : (
-        <>
-          <ul className="habit-list">
-            {reordering
-              ? habits.map((habit, index) => (
-                  <li key={habit.id} className="habit-row reorder-row">
-                    <span className="habit-emoji">{habit.emoji}</span>
-                    <span className="habit-name">{habit.name}</span>
-                    <button
-                      aria-label={`Move ${habit.name} up`}
-                      onClick={() => move(index, -1)}
-                      disabled={index === 0}
-                    >
-                      <Icon name="chevron-up" />
-                    </button>
-                    <button
-                      aria-label={`Move ${habit.name} down`}
-                      onClick={() => move(index, 1)}
-                      disabled={index === habits.length - 1}
-                    >
-                      <Icon name="chevron-down" />
-                    </button>
-                  </li>
-                ))
-              : habits.map((habit) => <HabitRow key={habit.id} habit={habit} />)}
-          </ul>
-          {habits.length > 1 && (
-            <button
-              className="reorder-toggle"
-              aria-label={reordering ? 'Done reordering' : 'Reorder habits'}
-              onClick={() => setReordering((r) => !r)}
-            >
-              <Icon name="grip" size={16} />
-              {reordering ? 'Done' : 'Reorder'}
-            </button>
-          )}
-        </>
+        <ul className="habit-list">
+          {habits.map((habit) => (
+            <HabitRow key={habit.id} habit={habit} />
+          ))}
+        </ul>
       )}
     </div>
   );
