@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { Habit } from '../../db/db';
 import * as repo from '../../db/repo';
 import { todayKey } from '../../lib/dates';
@@ -17,9 +17,23 @@ export default function SettingsScreen() {
   const theme = useAppStore((s) => s.theme);
   const setTheme = useAppStore((s) => s.setTheme);
 
+  const user = useAppStore((s) => s.user);
+  const authStatus = useAppStore((s) => s.authStatus);
+  const syncState = useAppStore((s) => s.syncState);
+  const syncError = useAppStore((s) => s.syncError);
+  const pendingOps = useAppStore((s) => s.pendingOps);
+  const signIn = useAppStore((s) => s.signIn);
+  const verifyCode = useAppStore((s) => s.verifyCode);
+  const signOutAction = useAppStore((s) => s.signOut);
+  const syncNow = useAppStore((s) => s.syncNow);
+
   const [permission, setPermission] = useState<NotificationPermission>(getNotificationPermission);
   const [archived, setArchived] = useState<Habit[]>([]);
   const [importError, setImportError] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const refreshArchived = useCallback(async () => {
     setArchived(await repo.getArchivedHabits());
@@ -91,9 +105,104 @@ export default function SettingsScreen() {
     }
   };
 
+  const submitEmail = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setBusy(true);
+    try {
+      await signIn(email.trim());
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Could not send the code.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submitCode = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setBusy(true);
+    try {
+      await verifyCode(email.trim(), code.trim());
+      setCode('');
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Could not verify the code.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="settings-screen">
       <h1>Settings</h1>
+
+      <section>
+        <h2>Account</h2>
+        {!user ? (
+          <>
+            <p className="field-hint">
+              Signed out, everything stays on this device. Sign in to sync your habits across
+              devices — your habit names and check-ins are then stored in your account.
+            </p>
+            {authStatus === 'code-sent' ? (
+              <form className="account-form" onSubmit={(e) => void submitCode(e)}>
+                <label htmlFor="account-code">Sign-in code</label>
+                <input
+                  id="account-code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="6-digit code"
+                />
+                <p className="field-hint">Sent to {email}. It expires shortly.</p>
+                <button className="cta" type="submit" disabled={busy || !code.trim()}>
+                  Verify code
+                </button>
+              </form>
+            ) : (
+              <form className="account-form" onSubmit={(e) => void submitEmail(e)}>
+                <label htmlFor="account-email">Email</label>
+                <input
+                  id="account-email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+                <button className="cta" type="submit" disabled={busy || !email.trim()}>
+                  Send code
+                </button>
+              </form>
+            )}
+          </>
+        ) : (
+          <>
+            <p>
+              Signed in as <strong>{user.email}</strong>
+            </p>
+            <p className="field-hint">
+              {pendingOps === 0
+                ? 'Everything is uploaded.'
+                : `${pendingOps} ${pendingOps === 1 ? 'change' : 'changes'} waiting to upload.`}
+              {syncState === 'syncing' && ' Syncing…'}
+              {syncState === 'offline' && ' Offline — will retry when you reconnect.'}
+            </p>
+            <div className="account-actions">
+              <button onClick={() => void syncNow()} disabled={syncState === 'syncing'}>
+                Sync now
+              </button>
+              <button onClick={() => void signOutAction()}>Sign out</button>
+            </div>
+          </>
+        )}
+        {(authError || syncError) && (
+          <p className="import-error" role="alert">
+            {authError ?? syncError}
+          </p>
+        )}
+      </section>
 
       <section>
         <h2>Notifications</h2>

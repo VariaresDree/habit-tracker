@@ -184,6 +184,15 @@ export function markSynced(ops: OutboxRow[]): Promise<void> {
   });
 }
 
+// Which account, if any, the rows on this device already belong to. Used to
+// refuse a second account rather than silently merging two people's data.
+export async function getLocalOwnerId(): Promise<string | null> {
+  const habit = await db.habits.filter((h) => h.userId !== null).first();
+  if (habit) return habit.userId;
+  const checkin = await db.checkins.filter((c) => c.userId !== null).first();
+  return checkin?.userId ?? null;
+}
+
 // Signing in claims whatever is on this device: anonymous rows are stamped
 // with the user id, and everything not yet confirmed uploaded is queued.
 // Never the reverse (audit §5.6) — local data is never overwritten by a pull

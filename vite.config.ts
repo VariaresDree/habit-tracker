@@ -37,6 +37,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    // Tests must never reach the real Supabase project: with these blank the
+    // sync layer reports itself unconfigured and no-ops unless a test mocks it.
+    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_PUBLISHABLE_KEY: '' },
     alias: {
       // vitest never runs the PWA plugin's virtual-module generation.
       'virtual:pwa-register/react': fileURLToPath(

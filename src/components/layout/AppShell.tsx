@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { getNotificationPermission, startReminderScheduler } from '../../lib/notifications';
 import { useAppStore } from '../../store/useAppStore';
+import { startAutoSync } from '../../sync/auto';
 import TabBar from './TabBar';
 
 export default function AppShell() {
@@ -18,6 +19,12 @@ export default function AppShell() {
     if (getNotificationPermission() !== 'granted') return;
     return startReminderScheduler();
   }, [status, notificationsEnabled]);
+
+  const user = useAppStore((s) => s.user);
+  useEffect(() => {
+    if (status !== 'ready' || !user) return;
+    return startAutoSync();
+  }, [status, user]);
 
   const theme = useAppStore((s) => s.theme);
   useEffect(() => {
