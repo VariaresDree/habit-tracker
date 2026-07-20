@@ -75,7 +75,6 @@ export default function SettingsScreen() {
     try {
       await repo.importData(payload);
       await hydrate();
-      await refreshArchived();
     } catch (e) {
       setImportError(e instanceof Error ? e.message : 'Import failed.');
     }
