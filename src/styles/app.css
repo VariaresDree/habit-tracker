@@ -203,9 +203,96 @@ body {
   margin-bottom: var(--space-4);
 }
 
+.date-heading {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
 .date-nav h1 {
   font-size: var(--text-xl);
   margin: 0;
+  line-height: 1.2;
+}
+
+.date-heading p {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.add-habit {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  color: var(--on-accent);
+  text-decoration: none;
+  box-shadow: var(--shadow-2);
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.add-habit:active {
+  transform: scale(0.94);
+}
+
+/* Daily progress ------------------------------------------------------- */
+
+.day-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.day-progress.complete {
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.progress-ring {
+  flex: none;
+  transform: rotate(-90deg);
+}
+
+.ring-track,
+.ring-value {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.ring-track {
+  stroke: var(--surface-sunken);
+}
+
+.ring-value {
+  stroke: var(--accent);
+  transition: stroke-dashoffset var(--duration-base) var(--ease-out);
+}
+
+.day-progress-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.day-progress-text strong {
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-progress-text span {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 .date-nav button {
@@ -282,13 +369,45 @@ body {
   text-decoration: line-through;
 }
 
+/* Colour-tinted chip: the habit's own colour, used as identity rather than
+   as a thin stripe nobody notices. */
 .habit-emoji {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--habit-color, var(--accent)) 16%, transparent);
   font-size: var(--text-lg);
   line-height: 1;
 }
 
 .habit-name {
   flex: 1;
+  min-width: 0;
+}
+
+.habit-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.habit-bar {
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.habit-bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--habit-color, var(--accent));
+  transition: width var(--duration-base) var(--ease-out);
 }
 
 .habit-check {
