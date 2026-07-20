@@ -7,6 +7,7 @@ import {
   type Habit,
   type HabitV1,
   type NewHabitDraft,
+  type OutboxRow,
   type Setting,
 } from './db';
 
@@ -142,6 +143,76 @@ export function putCheckin(
     };
     await db.checkins.put(row);
     await enqueue('upsert', 'checkins', checkinKey(entry.habitId, entry.date), row);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Outbox draining (used by the sync engine)
+// ---------------------------------------------------------------------------
+
+export function getOutboxBatch(limit: number): Promise<OutboxRow[]> {
+  return db.outbox.orderBy('seq').limit(limit).toArray();
+}
+
+export async function deleteOutboxRows(seqs: number[]): Promise<void> {
+  await db.outbox.bulkDelete(seqs);
+}
+
+export function bumpAttempts(seqs: number[]): Promise<void> {
+  return db.transaction('rw', db.outbox, async () => {
+    for (const seq of seqs) {
+      const row = await db.outbox.get(seq);
+      if (row) await db.outbox.update(seq, { attempts: row.attempts + 1 });
+    }
+  });
+}
+
+export function countPendingOps(): Promise<number> {
+  return db.outbox.count();
+}
+
+export function markSynced(ops: OutboxRow[]): Promise<void> {
+  return db.transaction('rw', db.habits, db.checkins, async () => {
+    for (const op of ops) {
+      if (op.table === 'habits') {
+        await db.habits.update(op.key, { syncStatus: 'synced' });
+      } else {
+        const [habitId, date] = op.key.split('|');
+        await db.checkins.update([habitId, date], { syncStatus: 'synced' });
+      }
+    }
+  });
+}
+
+// Signing in claims whatever is on this device: anonymous rows are stamped
+// with the user id, and everything not yet confirmed uploaded is queued.
+// Never the reverse (audit §5.6) — local data is never overwritten by a pull
+// it didn't ask for. Idempotent: safe to run on every sync.
+export function claimLocalDataForUser(userId: string): Promise<void> {
+  return db.transaction('rw', db.habits, db.checkins, db.outbox, async () => {
+    const anonHabits = await db.habits.filter((h) => h.userId === null).toArray();
+    for (const h of anonHabits) {
+      await db.habits.update(h.id, { userId, syncStatus: 'pending' });
+    }
+    const anonCheckins = await db.checkins.filter((c) => c.userId === null).toArray();
+    for (const c of anonCheckins) {
+      await db.checkins.update([c.habitId, c.date], { userId, syncStatus: 'pending' });
+    }
+
+    // An import clears the outbox but marks every row pending, so pending rows
+    // can legitimately exist with nothing queued for them.
+    const queued = new Set((await db.outbox.toArray()).map((o) => `${o.table}:${o.key}`));
+    for (const h of await db.habits.filter((x) => x.syncStatus === 'pending').toArray()) {
+      if (!queued.has(`habits:${h.id}`)) {
+        await enqueue(h.deletedAt ? 'delete' : 'upsert', 'habits', h.id, h);
+      }
+    }
+    for (const c of await db.checkins.filter((x) => x.syncStatus === 'pending').toArray()) {
+      const key = checkinKey(c.habitId, c.date);
+      if (!queued.has(`checkins:${key}`)) {
+        await enqueue('upsert', 'checkins', key, c);
+      }
+    }
   });
 }
 
