@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useHabitHistory } from '../../hooks/useHabitHistory';
 import { useAppStore } from '../../store/useAppStore';
 import EmptyState from '../common/EmptyState';
+import Icon from '../common/Icon';
 import Heatmap from './Heatmap';
 import StatsPanel from './StatsPanel';
 import StreakBadge from './StreakBadge';
@@ -38,6 +39,7 @@ export default function HabitDetailScreen() {
           {habit.emoji} {habit.name}
         </h1>
         <Link className="detail-edit" to={`/habit/${habit.id}/edit`}>
+          <Icon name="pencil" size={18} />
           Edit
         </Link>
       </header>
@@ -47,8 +49,12 @@ export default function HabitDetailScreen() {
       <StatsPanel history={history} habit={habit} />
 
       <div className="detail-actions">
-        <button onClick={() => void archive()}>Archive</button>
+        <button onClick={() => void archive()}>
+          <Icon name="archive" size={18} />
+          Archive
+        </button>
         <button className="danger" onClick={() => void remove()}>
+          <Icon name="trash" size={18} />
           Delete
         </button>
       </div>
