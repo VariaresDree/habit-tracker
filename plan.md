@@ -244,6 +244,19 @@ Deliberately **not** in the store:
 - [x] Live in-place migration rehearsal: genuine v1 DB (2 habits / 167 check-ins) migrated in the browser — all stats identical after (20% · 6/30 · 135 glasses; streaks 2/6), completedAt on exactly the 95 completed same-day rows, settings untouched
 - Decisions (2026-07-18): single active account per device; sign-out keeps local data; audit's outbox pattern; badges derived not stored
 
+### Phase 8 — Cross-device sync, part A: upload (audit sequencing step 4a)
+
+- [x] Supabase schema for `habits` + `checkins` with RLS scoped to `auth.uid()`, applied **before** any client code (CLAUDE.md guardrail); `(user_id, updated_at)` indexes ready for the 4b pull cursor
+- [x] RLS proven by impersonation SQL: owner sees their row, a different user sees zero rows across both tables, and a forged insert is rejected (`42501`)
+- [x] Email one-time-code sign-in (`src/sync/auth.ts`) — no password, no browser-tab detour for the installed PWA
+- [x] Outbox push drain (`src/sync/push.ts`): ops removed only after the server confirms; failures keep the queue and count attempts; auth errors halt instead of looping
+- [x] `claimLocalDataForUser` — sign-in stamps anonymous rows and uploads them; local data is never overwritten by a pull it didn't ask for
+- [x] Different-account guard: signing in a second account on a device that already holds data is refused, not merged
+- [x] Sign-out keeps all local data; the app stays fully usable signed-out and offline
+- [ ] **Live end-to-end upload — needs the user**: the sign-in code goes to their inbox, so a human must sign in once. Until then push is verified by tests + a live REST probe only.
+
+**Shared database note:** the account limit allowed no third free project, so these tables live in the `budget-tracker-sync` project alongside its `vaults` table (isolated by RLS; one login serves both personal apps).
+
 ## Out of Scope (revisited with Phase 6)
 
 - ~~Data export/import~~ — shipped in Phase 6
