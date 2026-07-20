@@ -271,6 +271,20 @@ Inspired by Productive, executed in this app's calmer register. Presentation lay
 - [x] **Starter templates + pickers**: six one-tap examples, emoji picker grid, curated colour swatches, segmented type control, live preview
 - Verified: 190 tests green, CI green, 375px and wider, light and dark, no horizontal overflow, contrast measured in both themes
 
+### Phase 10 — Second host: Vercel
+
+- [x] Base path made host-configurable via `VITE_BASE_PATH` (audit §4.8): one knob drives `base`, manifest `start_url`/`scope` and the SW navigate fallback; router basename and notification icons already derived from `BASE_URL`
+- [x] `vercel.json`: SPA rewrite (no `404.html` trick needed) and cache headers GitHub Pages cannot set — `sw.js` must-revalidate, hashed assets immutable
+- [x] Vercel project linked to the GitHub repo, so every push deploys to **both** hosts
+- [x] Verified live on Vercel: root-scoped SW, `start_url`/`scope` = `/`, deep links, v2 IndexedDB, cache headers as configured
+- [x] Verified **no regression on GitHub Pages**: still `/habit-tracker/` paths, correct SW scope, existing data untouched
+
+**Live URLs**
+- Vercel (new): https://habit-tracker-psi-ochre.vercel.app
+- GitHub Pages (original, kept alive so existing device data stays reachable): https://variaresdree.github.io/habit-tracker/
+
+**Known limitation — data does not follow the origin.** IndexedDB is per-origin, so habits stored on the Pages origin are invisible on Vercel and vice versa. Until sync pull (4b) lands, the only bridge is Settings → Export on one, Import on the other. This is the strongest argument for finishing 4b before treating either URL as "the" home.
+
 ## Out of Scope (revisited with Phase 6)
 
 - ~~Data export/import~~ — shipped in Phase 6
